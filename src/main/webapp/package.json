@@ -1,0 +1,24 @@
+{
+    "name": "topaz-server",
+    "version": "0.0.1",
+    "author": "Hugo MULLER",
+    "description": "Serveur pour l'application Topaz (SIMS)",
+
+    "dependencies":
+    {
+        "express": "~3.4.8",
+        "underscore": "~1.5.2"
+    },
+
+    "engines":
+    {
+        "node": "~0.10.25"
+    },
+
+    "main": "topaz-server.js",
+
+    "scripts":
+    {
+        "start": "node topaz-server.js"
+    }
+}

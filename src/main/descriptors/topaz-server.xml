@@ -1,0 +1,27 @@
+<assembly>
+    <id>topaz-server</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <baseDirectory></baseDirectory>
+    <fileSets>
+        <fileSet>
+            <directory>src/main/webapp</directory>
+            <!--<includes>
+                <include>/</include>
+            </includes>-->
+            <excludes>
+                <exclude>node_modules/conf/conf.js</exclude>
+            </excludes>
+            <outputDirectory>/</outputDirectory>
+        </fileSet>
+    </fileSets>
+    <files>
+        <file>
+            <source>src/main/filtered/conf.js</source>
+            <outputDirectory>node_modules/conf/</outputDirectory>
+            <filtered>true</filtered>
+        </file>
+    </files> 
+</assembly>
