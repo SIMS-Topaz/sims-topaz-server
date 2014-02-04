@@ -50,7 +50,6 @@ source nvm.sh
 which node
 --> devrait afficher /home/user/nvm/v0.10.22/bin/node et non /usr/local/bin/node
 ```
-#
 
 ####Base de données
 
