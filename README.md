@@ -31,28 +31,24 @@ Le navigateur téléchargera la version adaptée à l'OS (Linux, Windows, Mac OS
 Exécuter le fichier node-vX.X.X.msi.
 Tester avec la commande node dans un terminal.
 
-######Mac OS
+######Mac OS / Linux
 
-Exécuter le fichier node-vX.X.X.pkg.
-Tester avec la commande node dans un terminal.
-
-######Linux
-
-Extraire l'archive, lancer un shell et se placer dans le répertoire node-vX.X.X:
+Le plus simple est de passer par nvm: nvm permet d'avoir plusieurs versions de node.js installées sur votre machine, tout est installé en local donc ça ne pollue pas votre OS (même avec -g):
 ```
-cd node-vX.X.X
-sudo apt-get install g++ curl libssl-dev apache2-utils git-core
-./configure
-make
-sudo make install
+git clone https://github.com/creationix/nvm
+cd nvm
+source nvm.sh
+nvm install 0.10.24
+nvm use 0.10.24
+nvm alias default 0.10.24
 ```
 
-Ou alors, en passant par le gestionnaire de paquet:
+Quand vous voulez utiliser node.js:
 ```
-sudo apt-get install python-software-properties python g++ make
-sudo add-apt-repository ppa:chris-lea/node.js
-sudo apt-get update
-sudo apt-get install nodejs
+cd nvm
+source nvm.sh
+which node
+--> devrait afficher /home/user/nvm/v0.10.22/bin/node et non /usr/local/bin/node
 ```
 
 ####Base de données
