@@ -36,10 +36,13 @@ exports.get_previews = function(lat, long){
 }
 
 exports.get_message = function(id){
-  if(id !== undefined)
-    return _.where(messages, {id: parseInt(id)});
-  else
+  if(id !== undefined){
+    var msg = _.where(messages, {id: parseInt(id)});
+    return msg.length !== 0 ? msg:null;
+  }
+  else{
     return null;
+  }
 }
 
 exports.post_message = function(body){
