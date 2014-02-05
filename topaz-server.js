@@ -6,7 +6,7 @@ var conf    = require('./conf.js');
 var _       = require('underscore');
 var express = require('express');
 var app     = express();
-var topaz   = require('./topaz-app.js')
+var topaz   = require('./topaz-app.js');
 
 app.use(express.json())
 .use(express.urlencoded())
