@@ -3,12 +3,9 @@ conf:
 fichier de conf pour le serveur node.
 **************************************************************************/
 
-// NODE
-var node =
+exports.node =
 {
-	url  : 'localhost',
-	port : 8080
+  url  : 'localhost',
+  port : 8080
 };
 
-/*=========================== EXPORTS ===========================*/
-exports.node = node;

@@ -2,29 +2,19 @@
 topaz-server:
 service REST + websocket (maybe)
 **************************************************************************/
-var conf    = require('conf');
-var _u      = require('underscore');
+var conf    = require('./conf.js');
+var _       = require('underscore');
 var express = require('express');
 var app     = express();
+var topaz   = require('./topaz-app.js')
+
+app.use(express.json())
+.use(express.urlencoded())
+.get('/', topaz.get_index)
+.get('/get_previews', topaz.get_previews)
+.get('/get_message/:id', topaz.get_message)
+.post('/post_message', topaz.post_message)
+.listen(conf.node.port);
 
 console.log('topaz-server running at ' + conf.node.url + ':' + conf.node.port);
 
-app.get('/', function(req, res)
-{
-    console.log('/home');
-    res.send('Topaz Server Working!');
-})
-// test
-.get('/hello/:corki', function(req, res)
-{
-    console.log('/sayHello/'+req.params.corki);
-    res.send('Hello '+req.params.corki);
-})
-.use(function(req, res, next)
-{
-    res.redirect('/');
-})
-// pour plus tard... peut-etre...
-//.use(express.json())
-//.use(express.urlencoded())
-.listen(conf.node.port);
