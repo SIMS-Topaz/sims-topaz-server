@@ -11,9 +11,9 @@ var topaz   = require('./topaz-app.js');
 app.use(express.json())
 .use(express.urlencoded())
 .get('/', topaz.get_index)
-.get('/get_previews/:lat/:long', topaz.get_previews)
-.get('/get_message/:id', topaz.get_message)
-.post('/post_message', topaz.post_message)
+.get('/api/get_previews/:lat/:long', topaz.get_previews)
+.get('/api/get_message/:id', topaz.get_message)
+.post('/api/post_message', topaz.post_message)
 .listen(conf.node.port);
 
 console.log('topaz-server running at ' + conf.node.url + ':' + conf.node.port);

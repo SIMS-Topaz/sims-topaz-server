@@ -112,8 +112,6 @@ var postMessage = function(message, callback){
     if(_.isString(message.text) && message.text != ''
     && _.isNumber(message.lat) && _.isNumber(message.long))
     {
-      message.is_full = (message.text.length <= conf.PREVIEW_SIZE) ? 1 : 0;
-      message.date = new Date().getTime();
       var query = 'INSERT INTO messages (`text`, lat, `long`, `date`, is_full)'
         + ' VALUES (:text, :lat, :long, :date, :is_full)';
       doQuery(query, message, callback);
