@@ -17,4 +17,3 @@ app.use(express.json())
 .listen(conf.node.port);
 
 console.log('topaz-server running at ' + conf.node.url + ':' + conf.node.port);
-

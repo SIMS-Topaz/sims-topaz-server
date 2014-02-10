@@ -86,32 +86,22 @@ var doQuery = function(query, params, callback){
 
 // asks previews of all messages around position [lat, long]
 var getPreviews = function(lat, long, radius, callback){
-  if(!lat || !long){
-    return null;
-  }
-  else{
-    var query = 'SELECT id, LEFT(text, :preview_size) AS `text`, lat, `long`, is_full, date'
-      + ' FROM messages WHERE lat BETWEEN :min_lat AND :max_lat'
-      + ' AND `long` BETWEEN :min_long AND :max_long';
-    var params = {
-      preview_size : conf.PREVIEW_SIZE,
-      min_lat      : lat-radius,
-      max_lat      : lat+radius,
-      min_long     : long-radius,
-      max_long     : long+radius
-    };
-    doQuery(query, params, callback);
-  }
+  var query = 'SELECT id, LEFT(text, :preview_size) AS `text`, lat, `long`, is_full, date'
+    + ' FROM messages WHERE lat BETWEEN :min_lat AND :max_lat'
+    + ' AND `long` BETWEEN :min_long AND :max_long';
+  var params = {
+    preview_size : conf.PREVIEW_SIZE,
+    min_lat      : lat-radius,
+    max_lat      : lat+radius,
+    min_long     : long-radius,
+    max_long     : long+radius
+  };
+  doQuery(query, params, callback);
 };
 
 // asks message with id 'id'
 var getMessage = function(id, callback){
-  if(!id){
-    return null;
-  }
-  else{
-    doQuery('SELECT id, `text`, lat, `long`, date FROM messages WHERE id= :id', {id: id}, callback);
-  }
+  doQuery('SELECT id, `text`, lat, `long`, date FROM messages WHERE id= :id', {id: id}, callback);
 };
 
 // inserts new message in DB
@@ -123,9 +113,9 @@ var postMessage = function(message, callback){
     && _.isNumber(message.lat) && _.isNumber(message.long))
     {
       message.is_full = (message.text.length <= conf.PREVIEW_SIZE) ? 1 : 0;
-      message.date = new Date();
-      var query = 'INSERT INTO messages (`text`, lat, `long`, is_full)'
-        + ' VALUES (:text, :lat, :long, :is_full)';
+      message.date = new Date().getTime();
+      var query = 'INSERT INTO messages (`text`, lat, `long`, `date`, is_full)'
+        + ' VALUES (:text, :lat, :long, :date, :is_full)';
       doQuery(query, message, callback);
     }else{
       return null;
