@@ -13,9 +13,9 @@ exports.mysql =
 {
   url      : 'localhost',
   port     : 3306,
-	user     : 'root',
-	password : 'root',
-	database : 'topaz'
+  user     : 'root',
+  password : 'root',
+  database : 'topaz'
 };
 
 // date format used in MySQL

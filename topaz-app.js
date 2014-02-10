@@ -32,7 +32,7 @@ exports.post_message = function(req, res){
   // curl -X POST -H "Content-Type:application/json" -H "Accept:application/json" http://localhost:8080/api/post_message -d '{"lat":12,"long":12,"text":"Hello World"}'
   var message = req.body;
   message.is_full = (message.text.length <= conf.PREVIEW_SIZE) ? 1 : 0;
-  message.date = Math.floor(new Date().getTime()/1000);
+  message.date = new Date().getTime();
   mysql_helper.postMessage(message, function (error, result){
     if(error)
       console.error(error);
