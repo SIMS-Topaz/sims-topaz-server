@@ -5,7 +5,7 @@ exports.get_index = function(req, res){
 };
 
 exports.get_previews = function(req, res){
-  res.send(mock.get_previews(req.query.lat, req.query.long));
+  res.send(mock.get_previews(req.params.lat, req.params.long));
 };
 
 exports.get_message = function(req, res){
