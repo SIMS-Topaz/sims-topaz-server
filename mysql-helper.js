@@ -86,9 +86,10 @@ var doQuery = function(query, params, callback){
 
 // asks previews of all messages around position [lat, long]
 var getPreviews = function(lat, long, radius, callback){
-  var query = 'SELECT `id`, LEFT(`text`, :preview_size) AS `text`, `lat`, `long`, `is_full`, `date`'
+  var query = 'SELECT `id`, LEFT(`text`, :preview_size) AS `text`, `lat`, `long`, `date`'
     + ' FROM messages WHERE `lat` BETWEEN :min_lat AND :max_lat'
-    + ' AND `long` BETWEEN :min_long AND :max_long';
+    + ' AND `long` BETWEEN :min_long AND :max_long'
+    + ' LIMIT 20';
   var params = {
     preview_size : conf.PREVIEW_SIZE,
     min_lat      : lat-radius,
@@ -112,8 +113,8 @@ var postMessage = function(message, callback){
     if(_.isString(message.text) && message.text != ''
     && _.isNumber(message.lat) && _.isNumber(message.long))
     {
-      var query = 'INSERT INTO messages (`text`, `lat`, `long`, `date`, `is_full`)'
-        + ' VALUES (:text, :lat, :long, :date, :is_full)';
+      var query = 'INSERT INTO messages (`text`, `lat`, `long`, `date`)'
+        + ' VALUES (:text, :lat, :long, :date)';
       doQuery(query, message, callback);
     }else{
       return null;

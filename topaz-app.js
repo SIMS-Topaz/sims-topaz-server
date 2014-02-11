@@ -1,6 +1,7 @@
 var mock = require('./mock.js');
 var mysql_helper = require('./mysql-helper.js');
 var conf  = require('./conf.js');
+var _ = require ('underscore');
 
 mysql_helper.openConnection();
 
@@ -15,6 +16,10 @@ exports.get_previews = function(req, res){
   mysql_helper.getPreviews(lat, long, radius, function (error, results) {
     if(error)
       console.error(error);
+    results = _.map (results, function (result) {
+      result['is_full'] = true;
+      return result;
+    });
     res.json (results);
   });
 };
