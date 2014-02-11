@@ -86,8 +86,8 @@ var doQuery = function(query, params, callback){
 
 // asks previews of all messages around position [lat, long]
 var getPreviews = function(lat, long, radius, callback){
-  var query = 'SELECT id, LEFT(text, :preview_size) AS `text`, lat, `long`, is_full, date'
-    + ' FROM messages WHERE lat BETWEEN :min_lat AND :max_lat'
+  var query = 'SELECT `id`, LEFT(`text`, :preview_size) AS `text`, `lat`, `long`, `is_full`, `date`'
+    + ' FROM messages WHERE `lat` BETWEEN :min_lat AND :max_lat'
     + ' AND `long` BETWEEN :min_long AND :max_long';
   var params = {
     preview_size : conf.PREVIEW_SIZE,
@@ -101,7 +101,7 @@ var getPreviews = function(lat, long, radius, callback){
 
 // asks message with id 'id'
 var getMessage = function(id, callback){
-  doQuery('SELECT id, `text`, lat, `long`, date FROM messages WHERE id= :id', {id: id}, callback);
+  doQuery('SELECT `id`, `text`, `lat`, `long`, `date` FROM messages WHERE `id`= :id', {id: id}, callback);
 };
 
 // inserts new message in DB
@@ -112,7 +112,7 @@ var postMessage = function(message, callback){
     if(_.isString(message.text) && message.text != ''
     && _.isNumber(message.lat) && _.isNumber(message.long))
     {
-      var query = 'INSERT INTO messages (`text`, lat, `long`, `date`, is_full)'
+      var query = 'INSERT INTO messages (`text`, `lat`, `long`, `date`, `is_full`)'
         + ' VALUES (:text, :lat, :long, :date, :is_full)';
       doQuery(query, message, callback);
     }else{
@@ -123,7 +123,7 @@ var postMessage = function(message, callback){
 
 // removes a row
 var removeData = function(table, id){
-  client.query('DELETE FROM :table WHERE id = :id', {table: table, id: id}, function(error){
+  client.query('DELETE FROM :table WHERE `id` = :id', {table: table, id: id}, function(error){
     if(error){
       console.error('ERROR mysql-helper.removeData:' + error);
     }
