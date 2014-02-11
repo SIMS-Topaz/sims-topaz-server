@@ -89,7 +89,7 @@ var getPreviews = function(lat, long, radius, callback){
   var query = 'SELECT `id`, LEFT(`text`, :preview_size) AS `text`, `lat`, `long`, `date`'
     + ' FROM messages WHERE `lat` BETWEEN :min_lat AND :max_lat'
     + ' AND `long` BETWEEN :min_long AND :max_long'
-    + ' LIMIT 50 ORDER BY `id` DESC';
+    + ' ORDER BY `id` DESC LIMIT 1000';
   var params = {
     preview_size : conf.PREVIEW_SIZE,
     min_lat      : lat-radius,
