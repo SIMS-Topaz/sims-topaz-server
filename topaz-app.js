@@ -18,6 +18,11 @@ var handleError = function(rules){
   return result;
 };
 
+var handleResponse = function(url, result, message)
+{
+  return (url.indexOf('v1.1') != -1) ? {success: message, data: result} : result;
+};
+
 exports.get_index = function(req, res){
   res.send('Topaz Server Working!');
 };
@@ -25,31 +30,45 @@ exports.get_index = function(req, res){
 exports.get_previews = function(req, res){
   var rules = [
     {
-      rule: (req.params.lat !== undefined),
+      rule: (req.params.lat1 !== undefined),
       code: 400,
-      msg: "Missing 'lat' parameter"
+      msg: "Missing 'lat1' parameter"
     }, {
-      rule: (req.params.long !== undefined),
+      rule: (req.params.long1 !== undefined),
       code: 400,
-      msg: "Missing 'long' parameter"
+      msg: "Missing 'long1' parameter"
     }
   ];
+  if(req.url.indexOf('v1.1') != -1){
+    rules = rules.concat(
+    {
+      rule: (req.params.lat2 !== undefined),
+      code: 400,
+      msg: "Missing 'lat2' parameter"
+    }, {
+      rule: (req.params.long2 !== undefined),
+      code: 400,
+      msg: "Missing 'long2' parameter"
+    });
+  }
+  
   var error = handleError(rules);
   
   if(error !== null){
     res.json(error);
   }else{
-    var lat = parseFloat(req.params.lat);
-    var long = parseFloat(req.params.long);
-    var radius = 50;
-    mysql_helper.getPreviews(lat, long, radius, function (error, results) {
+    var lat1  = parseFloat(req.params.lat1);
+    var long1 = parseFloat(req.params.long1);
+    var lat2  = parseFloat(req.params.lat2) || 50;
+    var long2 = parseFloat(req.params.long2) || null;
+    mysql_helper.getPreviews(lat1, long1, lat2, long2, function (error, results) {
       if(error)
         console.error(error);
       results = _.map (results, function (result) {
         result['is_full'] = true;
         return result;
       });
-      res.json (results);
+      res.json(handleResponse(req.url, results, {code: 200, msg: 'OK'}));
     });
   }
 };
@@ -69,7 +88,7 @@ exports.get_message = function(req, res){
     mysql_helper.getMessage(id, function (error, results){
       if(error)
         console.error(error);
-      res.json(results);
+      res.json(handleResponse(req.url, results, {code: 200, msg: 'OK'}));
     });
   }
 };
@@ -102,7 +121,7 @@ exports.post_message = function(req, res){
       if(error)
         console.error(error);
       message['id'] = result.insertId;
-      res.json (message);
+      res.json(handleResponse(req.url, message, {code: 201, msg: 'Created'}));
     });
   }
 };
