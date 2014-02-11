@@ -12,7 +12,7 @@ exports.get_index = function(req, res){
 exports.get_previews = function(req, res){
   var lat = parseFloat(req.params.lat);
   var long = parseFloat(req.params.long);
-  var radius = 0.0050;
+  var radius = 0.1;
   mysql_helper.getPreviews(lat, long, radius, function (error, results) {
     if(error)
       console.error(error);
