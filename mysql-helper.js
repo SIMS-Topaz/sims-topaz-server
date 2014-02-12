@@ -85,18 +85,34 @@ var doQuery = function(query, params, callback){
 };
 
 // asks previews of all messages around position [lat, long]
-var getPreviews = function(lat, long, radius, callback){
+var getPreviews = function(lat, long, lat2, long2, callback){
   var query = 'SELECT `id`, LEFT(`text`, :preview_size) AS `text`, `lat`, `long`, `date`'
     + ' FROM messages WHERE `lat` BETWEEN :min_lat AND :max_lat'
     + ' AND `long` BETWEEN :min_long AND :max_long'
     + ' ORDER BY `id` DESC LIMIT 1000';
-  var params = {
-    preview_size : conf.PREVIEW_SIZE,
-    min_lat      : lat-radius,
-    max_lat      : lat+radius,
-    min_long     : long-radius,
-    max_long     : long+radius
-  };
+  var params = {};
+  
+  if(!long2){
+    //getPreviews v1
+    var radius = lat2;
+    params = {
+      preview_size : conf.PREVIEW_SIZE,
+      min_lat      : lat-radius,
+      max_lat      : lat+radius,
+      min_long     : long-radius,
+      max_long     : long+radius
+    };
+  }else{
+    //getPreviews v1.1
+    params = {
+      preview_size : conf.PREVIEW_SIZE,
+      min_lat      : lat,
+      max_lat      : lat2,
+      min_long     : long,
+      max_long     : long2
+    };
+  }
+  
   doQuery(query, params, callback);
 };
 
