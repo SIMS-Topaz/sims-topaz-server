@@ -5,17 +5,17 @@ fichier de conf pour le serveur node.
 
 exports.node =
 {
-  url  : 'localhost',
-  port : 8080
+  url  : '',
+  port : 
 };
 
 exports.mysql =
 {
-  url      : 'localhost',
-  port     : 3306,
-  user     : 'root',
-  password : 'root',
-  database : 'topaz'
+  url      : '',
+  port     : ,
+  user     : '',
+  password : '',
+  database : ''
 };
 
 // date format used in MySQL
