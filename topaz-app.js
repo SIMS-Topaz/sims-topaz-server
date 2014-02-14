@@ -90,7 +90,7 @@ exports.get_message = function(req, res){
         console.error(error);
 	res.json(formatError(500, error));
       }else{
-	res.json(formatResponse(version, 200, 'OK', results));
+	res.json(formatResponse(version, 200, 'OK', results[0]||null));
       }
     });
   }
