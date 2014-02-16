@@ -110,15 +110,15 @@ var prepare_post_message = function(req, callback){
 
   var rules = [
     {
-      rule: (_.isNumber(parseFloat(req.body.lat))),
+      rule: (_.isNumber(parseFloat(message.lat))),
       code: 400,
       msg: "Missing 'lat' parameter"
     },{
-      rule: (_.isNumber(parseFloat(req.body.long))),
+      rule: (_.isNumber(parseFloat(message.long))),
       code: 400,
       msg: "Missing 'long' parameter"
     },{
-      rule: (_.isString(req.body.text)),
+      rule: (_.isString(message.text)),
       code: 400,
       msg: "Missing 'text' parameter"
     }
