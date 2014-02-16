@@ -7,6 +7,9 @@ var _       = require('underscore');
 var express = require('express');
 var app     = express();
 var topaz   = require('./topaz-app.js');
+var mysql_helper = require('./mysql-helper.js');
+
+mysql_helper.openConnection();
 
 app.use(express.json())
 .use(express.urlencoded())
