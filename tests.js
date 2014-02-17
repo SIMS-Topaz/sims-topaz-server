@@ -119,9 +119,9 @@ exports.test_prepare_post_message = function(test){
   });
 };
 
-var insert_dummy = function(callback){
-  var query = 'INSERT INTO test_messages (`text`, `lat`, `long`, `date`) VALUES (:text, :lat, :long, :date)';
-  var params = {'lat': 404,'long': 313,'text': 'Hello World', 'date': new Date().getTime()};
+var insert_dummy = function(params, callback){
+  var query = 'INSERT INTO test_messages (`text`, `lat`, `long`, `date`) VALUES(:text, :lat, :long, :date)';
+  params.date = new Date().getTime();
   mysql_helper.doQuery(query, params, function(error, results){
     callback(results.insertId);
   });
@@ -172,22 +172,40 @@ exports.test_mysql_helper = {
 
   test_getPreviews: {
     setUp: function(callback){
-      insert_dummy(function(){callback();});
-    },
-    tearDown: function(callback){
-      callback();
+      insert_dummy({'lat': 123, 'long': 456, 'text': '221B Baker Street'}, function(){callback();});
     },
     test: function(test){
       test.expect(3);
-      mysql_helper.getPreviews(403, 312, 405, 314, function(error, results){
+      mysql_helper.getPreviews(122, 455, 124, 457, function(error, results){
 	test.equal(error, null);
 	test.notEqual(results.length, 0);
 	var any_value = _.any(results, function(result){
-	  return result.text === 'Hello World' && result.lat === 404 && result.long === 313;
+	  return result.text === '221B Baker Street' && result.lat === 123 && result.long === 456;
 	});
 	test.equal(any_value, true);
 	test.done();
       });
+    }
+  },
+
+  test_get_previews: {
+    setUp: function(callback){
+      insert_dummy({'lat': 111, 'long': 101, 'text': 'Don\'t panic !'}, function(){callback();});
+    },
+    test: function(test){
+      var req = {'params':{'version': 'v1.1', 'lat1': 99, 'long1': 79, 'lat2': 199, 'long2': 179}};
+      var res = {
+	json: function(object){
+	  test.strictEqual(object.error, undefined);
+	  test.notEqual(object.data.length, 0);
+	  var any_value = _.any(object.data, function(result){
+	    return result.text === 'Don\'t panic !' && result.lat === 111 && result.long === 101;
+	  });
+	  test.equal(any_value, true);
+	  test.done();
+	}
+      };
+      topaz.get_previews(req, res);
     }
   },
 
@@ -205,25 +223,70 @@ exports.test_mysql_helper = {
     }
   },
 
+  test_post_message: {
+    test: function(test){
+      var req = {'params': {'version': 'v1.1'}, 'body': {'lat':23,'long':42,'text':'The cake is a lie'}};
+      var res = {
+	'json': function(object){
+	  test.expect(4);
+	  test.equal(object.error, null);
+	  test.ok(object.data.date);
+	  test.ok(object.data.id);
+	  delete object.data.date;
+	  delete object.data.id;
+	  test.deepEqual(object, {'success': {'code': 201, 'msg': 'Created'}, 'data': {'lat': 23, 'long': 42, 'text': 'The cake is a lie'}});
+	  test.done();
+	}
+      };
+      topaz.post_message(req, res);
+    }
+  },
+
   test_getMessage: {
     setUp: function(callback){
       var self = this;
-      insert_dummy(function(id){
+      insert_dummy({'lat': 25, 'long': 26, 'text': 'Draco Dormiens Nunquam Titillandus'}, function(id){
 	self.id = id;
 	callback();
       });
     },
     test: function(test){
-      test.expect(4);
+      test.expect(5);
       test.notEqual(this.id, undefined);
       var self = this;
       mysql_helper.getMessage(this.id, function(error, result){
 	test.equal(error, null);
 	test.strictEqual(result[0], undefined);
+	test.ok(result.date);
 	delete result.date;
-	test.deepEqual(result, {'id': self.id, 'lat':404, 'long':313, 'text': 'Hello World'});
+	test.deepEqual(result, {'id': self.id, 'lat':25, 'long':26, 'text': 'Draco Dormiens Nunquam Titillandus'});
 	test.done();
       });
+    }
+  },
+
+  test_get_message: {
+    setUp: function(callback){
+      var self = this;
+      insert_dummy({'lat': 23, 'long': 8, 'text': 'Move fast and break things.'}, function(id){
+	self.id = id;
+	callback();
+      });
+    },
+    test: function(test){
+      var req = {'params': {'version': 'v1.1', 'id': this.id}};
+      var self = this;
+      var res = {
+	json: function(object){
+	  test.expect(3);
+	  test.equal(object.error, undefined);
+	  test.ok(object.data.date);
+	  delete object.data.date;
+	  test.deepEqual(object.data, {'id': self.id, 'lat': 23, 'long': 8, 'text': 'Move fast and break things.'});
+	  test.done();
+	}
+      };
+      topaz.get_message(req, res);
     }
   }
 };
