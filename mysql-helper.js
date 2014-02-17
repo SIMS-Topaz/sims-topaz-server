@@ -7,6 +7,7 @@ var conf  = require('./conf.js');
 var mysql = require('mysql');
 var _     = require('underscore');
 var client;
+var table = (process.env.ENV==='test')?'test_messages':'messages';
 
 /*=========================== CONNECTION ===========================*/
 var openConnection = function(){
@@ -75,11 +76,7 @@ var handleDisconnect = function(){
 /*=========================== DATA ===========================*/
 // does request 'query' and call 'callback' with the query's result
 var doQuery = function(query, params, callback){
-  callback = callback || function(error, results){
-    console.dir(results);
-  };
   client.query(query, params, function(error, results){
-    if(error) console.error('ERROR mysql-helper.doQuery' + error);
     callback(error, results);
   });
 };
@@ -87,7 +84,7 @@ var doQuery = function(query, params, callback){
 // asks previews of all messages around position [lat, long]
 var getPreviews = function(lat, long, lat2, long2, callback){
   var query = 'SELECT `id`, LEFT(`text`, :preview_size) AS `text`, `lat`, `long`, `date`'
-    + ' FROM messages WHERE `lat` BETWEEN :min_lat AND :max_lat'
+    + ' FROM '+table+' WHERE `lat` BETWEEN :min_lat AND :max_lat'
     + ' AND `long` BETWEEN :min_long AND :max_long'
     + ' ORDER BY `id` DESC LIMIT 1000';
   var params = {};
@@ -118,29 +115,27 @@ var getPreviews = function(lat, long, lat2, long2, callback){
 
 // asks message with id 'id'
 var getMessage = function(id, callback){
-  doQuery('SELECT `id`, `text`, `lat`, `long`, `date` FROM messages WHERE `id`= :id', {id: id}, callback);
+  var query = 'SELECT `id`, `text`, `lat`, `long`, `date`'
+   + ' FROM '+table
+   + ' WHERE `id`= :id';
+  var params = {id: id};
+  doQuery(query, params, function(error, results){
+    callback(error, results[0]||null);
+  });
 };
 
 // inserts new message in DB
 var postMessage = function(message, callback){
-  if(!_.isObject(message)){
-    return null;
-  }else{
-    if(_.isString(message.text) && message.text != ''
-    && _.isNumber(message.lat) && _.isNumber(message.long))
-    {
-      var query = 'INSERT INTO messages (`text`, `lat`, `long`, `date`)'
-        + ' VALUES (:text, :lat, :long, :date)';
-      doQuery(query, message, callback);
-    }else{
-      return null;
-    }
-  }
+  message.date = new Date().getTime();
+  var query = 'INSERT INTO '+table+' (`text`, `lat`, `long`, `date`)'
+    + ' VALUES (:text, :lat, :long, :date)';
+  doQuery(query, message, callback);
 };
 
 // removes a row
-var removeData = function(table, id){
-  client.query('DELETE FROM :table WHERE `id` = :id', {table: table, id: id}, function(error){
+//TODO: upgrade it to be useful
+var removeData = function(id){
+  client.query('DELETE FROM '+table+' WHERE `id` = :id', {id: id}, function(error){
     if(error){
       console.error('ERROR mysql-helper.removeData:' + error);
     }

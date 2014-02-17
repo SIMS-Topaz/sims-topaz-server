@@ -91,12 +91,12 @@ var get_message = function(req, res){
     if(error !== null){
       res.json(error);
     }else{
-      mysql_helper.getMessage(id, function (error, results){
+      mysql_helper.getMessage(id, function (error, result){
 	if(error){
 	  console.error(error);
 	  res.json(formatError(500, error));
 	}else{
-	  res.json(formatResponse(version, 200, 'OK', results[0]||null));
+	  res.json(formatResponse(version, 200, 'OK', result));
 	}
       });
     }
@@ -132,7 +132,6 @@ var post_message = function(req, res){
     if(error !== null){
       res.json(error);
     }else{
-      message.date = new Date().getTime();
       mysql_helper.postMessage(message, function (error, result){
 	if(error){
 	  console.error(error);
