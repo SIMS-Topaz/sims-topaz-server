@@ -36,87 +36,69 @@ exports.test_handleError = function(test){
 };
 
 exports.test_prepare_get_previews = function(test){
-  test.expect(12);
+  test.expect(7);
   var input = {'params': {'version': 'v1.1', 'lat1': 25, 'long1': 50, 'lat2': 75, 'long2': 100}};
 
-  topaz.prepare_get_previews(input, function(error, version, lat1, long1, lat2, long2){
-    test.equal(arguments.length, 6);
-    test.deepEqual([error, version, lat1, long1, lat2, long2], [null, 'v1.1', 25, 50, 75, 100]);
-  });
+  var prep = topaz.prepare_get_previews(input);
+  test.deepEqual([prep.error, prep.version, prep.lat1, prep.long1, prep.lat2, prep.long2], [null, 'v1.1', 25, 50, 75, 100]);
 
   input = {'params': {'version': 'v1.1', 'lat1': 25, 'long1': 50}};
 
-  topaz.prepare_get_previews(input, function(error, version, lat1, long1, lat2, long2){
-    test.equal(arguments.length, 6);
-    test.notEqual(error, null);
-    test.equal(error.error.code, 400);
-  });
+  prep = topaz.prepare_get_previews(input);
+  test.notEqual(prep.error, null);
+  test.equal(prep.error.error.code, 400);
 
   var input_v1 = {'params': {'version': 'v1', 'lat1': 15, 'long1': 30, 'lat2': 45, 'long2': 60}};
 
-  topaz.prepare_get_previews(input_v1, function(error, version, lat1, long1, lat2, long2){
-    test.equal(arguments.length, 6);
-    test.deepEqual([error, version, lat1, long1, lat2, long2], [null, 'v1', 15, 30, 50, null]);
-  });
+  prep = topaz.prepare_get_previews(input_v1)
+  test.deepEqual([prep.error, prep.version, prep.lat1, prep.long1, prep.lat2, prep.long2], [null, 'v1', 15, 30, 50, null]);
 
   input_v1 = {'params': {'version': 'v1', 'lat1': 15, 'long1': 30}};
 
-  topaz.prepare_get_previews(input_v1, function(error, version, lat1, long1, lat2, long2){
-    test.equal(arguments.length, 6);
-    test.deepEqual([error, version, lat1, long1, lat2, long2], [null, 'v1', 15, 30, 50, null]);
-  });
+  prep = topaz.prepare_get_previews(input_v1)
+  test.deepEqual([prep.error, prep.version, prep.lat1, prep.long1, prep.lat2, prep.long2], [null, 'v1', 15, 30, 50, null]);
 
   input_v1 = {'params': {'version': 'v1', 'lat1': 15}};
 
-  topaz.prepare_get_previews(input_v1, function(error, version, lat1, long1, lat2, long2){
-    test.equal(arguments.length, 6);
-    test.notEqual(error, null);
-    test.equal(error.error.code, 400);
-  });
+  prep = topaz.prepare_get_previews(input_v1)
+  test.notEqual(prep.error, null);
+  test.equal(prep.error.error.code, 400);
 
   test.done();
 };
 
 exports.test_prepare_get_message = function(test){
-  test.expect(7);
+  test.expect(4);
   var input = {'params': {'version': 'v1.1', 'id': 1234}};
 
-  topaz.prepare_get_message(input, function(error, version, id){
-    test.equal(arguments.length, 3);
-    test.deepEqual([error, version, id], [null, 'v1.1', 1234]);
-  });
+  var prep = topaz.prepare_get_message(input)
+  test.deepEqual([prep.error, prep.version, prep.id], [null, 'v1.1', 1234]);
 
   input = {'params': {'version': 'v1.1'}};
 
-  topaz.prepare_get_message(input, function(error, version, id){
-    test.equal(arguments.length, 3);
-    test.notEqual(error, null);
-    test.equal(error.error.code, 400);
-  });
+  prep = topaz.prepare_get_message(input)
+  test.notEqual(prep.error, null);
+  test.equal(prep.error.error.code, 400);
 
   var input_v1 = {'params': {'version': 'v1', 'id': 5678}};
 
-  topaz.prepare_get_message(input_v1, function(error, version, id){
-    test.equal(arguments.length, 3);
-    test.deepEqual([error, version, id], [null, 'v1', 5678]);
-  });
+  prep = topaz.prepare_get_message(input_v1)
+  test.deepEqual([prep.error, prep.version, prep.id], [null, 'v1', 5678]);
 
   test.done();
 };
 
 exports.test_prepare_post_message = function(test){
-  test.expect(4);
+  test.expect(3);
   var input = {
     'params': {'version': 'v1.1'},
     'body': {'lat': 10, 'long': 20, 'text': 'Hello World'}
   };
-  topaz.prepare_post_message(input, function(error, version, message){
-    test.equal(arguments.length, 3);
-    test.equal(error, null);
-    test.equal(version, 'v1.1');
-    test.deepEqual(message, {'lat': 10, 'long': 20, 'text': 'Hello World'});
-    test.done();
-  });
+  var prep = topaz.prepare_post_message(input);
+  test.equal(prep.error, null);
+  test.equal(prep.version, 'v1.1');
+  test.deepEqual(prep.message, {'lat': 10, 'long': 20, 'text': 'Hello World'});
+  test.done();
 };
 
 var insert_dummy = function(params, callback){
@@ -225,10 +207,10 @@ exports.test_mysql_helper = {
 
   test_post_message: {
     test: function(test){
+      test.expect(4);
       var req = {'params': {'version': 'v1.1'}, 'body': {'lat':23,'long':42,'text':'The cake is a lie'}};
       var res = {
 	'json': function(object){
-	  test.expect(4);
 	  test.equal(object.error, null);
 	  test.ok(object.data.date);
 	  test.ok(object.data.id);
@@ -274,11 +256,11 @@ exports.test_mysql_helper = {
       });
     },
     test: function(test){
+      test.expect(3);
       var req = {'params': {'version': 'v1.1', 'id': this.id}};
       var self = this;
       var res = {
 	json: function(object){
-	  test.expect(3);
 	  test.equal(object.error, undefined);
 	  test.ok(object.data.date);
 	  delete object.data.date;

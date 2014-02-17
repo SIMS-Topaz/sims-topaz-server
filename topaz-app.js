@@ -6,7 +6,7 @@ var get_index = function(req, res){
   res.send('Topaz Server Working!');
 };
 
-var prepare_get_previews = function(req, callback){
+var prepare_get_previews = function(req){
   var version = req.params.version;
   var lat1 = req.params.lat1;
   var lat2 = req.params.lat2;
@@ -48,31 +48,31 @@ var prepare_get_previews = function(req, callback){
     lat2  = parseFloat(lat2);
     long2 = parseFloat(long2);
   }
-  callback (error, version, lat1, long1, lat2, long2);
+
+  return {'error': error, 'version': version, 'lat1': lat1, 'long1': long1, 'lat2': lat2, 'long2': long2};
 };
 
 var get_previews = function(req, res){
-  prepare_get_previews(req, function(error, version, lat1, long1, lat2, long2){
-    if(error !== null){
-      res.json(error);
-    }else{
-      mysql_helper.getPreviews(lat1, long1, lat2, long2, function (error, results) {
-	if(error){
-	  console.error(error);
-	  res.json(formatError(500, error));
-	}else{
-	  results = _.map (results, function (result) {
-	    result['is_full'] = true;
-	    return result;
-	  });
-	  res.json(formatResponse(version, 200, 'OK', results));
-	}
-      });
-    }
-  });
+  var prep = prepare_get_previews(req);
+  if(prep.error !== null){
+    res.json(prep.error);
+  }else{
+    mysql_helper.getPreviews(prep.lat1, prep.long1, prep.lat2, prep.long2, function (error, results) {
+      if(error){
+	console.error(error);
+	res.json(formatError(500, error));
+      }else{
+	results = _.map (results, function (result) {
+	  result['is_full'] = true;
+	  return result;
+	});
+	res.json(formatResponse(prep.version, 200, 'OK', results));
+      }
+    });
+  }
 };
 
-var prepare_get_message = function(req, callback){
+var prepare_get_message = function(req){
   var id = req.params.id;
   var version = req.params.version;
 
@@ -83,27 +83,26 @@ var prepare_get_message = function(req, callback){
     }];
 
   var error = handleError(rules);
-  callback(error, version, id);
+  return {'error': error, 'version': version, 'id': id};
 };
 
 var get_message = function(req, res){
-  prepare_get_message(req, function(error, version, id){
-    if(error !== null){
-      res.json(error);
-    }else{
-      mysql_helper.getMessage(id, function (error, result){
-	if(error){
-	  console.error(error);
-	  res.json(formatError(500, error));
-	}else{
-	  res.json(formatResponse(version, 200, 'OK', result));
-	}
-      });
-    }
-  });
+  var prep = prepare_get_message(req);
+  if(prep.error !== null){
+    res.json(prep.error);
+  }else{
+    mysql_helper.getMessage(prep.id, function (error, result){
+      if(error){
+	console.error(error);
+	res.json(formatError(500, error));
+      }else{
+	res.json(formatResponse(prep.version, 200, 'OK', result));
+      }
+    });
+  }
 };
 
-var prepare_post_message = function(req, callback){
+var prepare_post_message = function(req){
   // curl -X POST -H "Content-Type:application/json" -H "Accept:application/json" http://localhost:8080/api/v1.1/post_message -d '{"lat":12,"long":12,"text":"Hello World"}'
   var message = req.body;
   var version = req.params.version;
@@ -124,25 +123,25 @@ var prepare_post_message = function(req, callback){
     }
   ];
   var error = handleError(rules);
-  callback(error, version, message);
+  return {'error': error, 'version': version, 'message': message};
 };
 
 var post_message = function(req, res){
-  prepare_post_message(req, function(error, version, message){
-    if(error !== null){
-      res.json(error);
-    }else{
-      mysql_helper.postMessage(message, function (error, result){
-	if(error){
-	  console.error(error);
-	  res.json(formatError(500, error));
-	}else{
-	  message['id'] = result.insertId;
-	  res.json(formatResponse(version, 201, 'Created', message));
-	}
-      });
-    }
-  });
+  var prep = prepare_post_message(req);
+  var message = prep.message;
+  if(prep.error !== null){
+    res.json(prep.error);
+  }else{
+    mysql_helper.postMessage(prep.message, function (error, result){
+      if(error){
+	console.error(error);
+	res.json(formatError(500, error));
+      }else{
+	message['id'] = result.insertId;
+	res.json(formatResponse(prep.version, 201, 'Created', message));
+      }
+    });
+  }
 };
 
 var handleError = function(rules){
