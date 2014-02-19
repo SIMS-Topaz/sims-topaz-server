@@ -50,17 +50,17 @@ exports.test_prepare_get_previews = function(test){
 
   var input_v1 = {'params': {'version': 'v1', 'lat1': 15, 'long1': 30, 'lat2': 45, 'long2': 60}};
 
-  prep = topaz.prepare_get_previews(input_v1)
+  prep = topaz.prepare_get_previews(input_v1);
   test.deepEqual([prep.error, prep.version, prep.lat1, prep.long1, prep.lat2, prep.long2], [null, 'v1', 15, 30, 50, null]);
 
   input_v1 = {'params': {'version': 'v1', 'lat1': 15, 'long1': 30}};
 
-  prep = topaz.prepare_get_previews(input_v1)
+  prep = topaz.prepare_get_previews(input_v1);
   test.deepEqual([prep.error, prep.version, prep.lat1, prep.long1, prep.lat2, prep.long2], [null, 'v1', 15, 30, 50, null]);
 
   input_v1 = {'params': {'version': 'v1', 'lat1': 15}};
 
-  prep = topaz.prepare_get_previews(input_v1)
+  prep = topaz.prepare_get_previews(input_v1);
   test.notEqual(prep.error, null);
   test.equal(prep.error.error.code, 400);
 
@@ -71,18 +71,18 @@ exports.test_prepare_get_message = function(test){
   test.expect(4);
   var input = {'params': {'version': 'v1.1', 'id': 1234}};
 
-  var prep = topaz.prepare_get_message(input)
+  var prep = topaz.prepare_get_message(input);
   test.deepEqual([prep.error, prep.version, prep.id], [null, 'v1.1', 1234]);
 
   input = {'params': {'version': 'v1.1'}};
 
-  prep = topaz.prepare_get_message(input)
+  prep = topaz.prepare_get_message(input);
   test.notEqual(prep.error, null);
   test.equal(prep.error.error.code, 400);
 
   var input_v1 = {'params': {'version': 'v1', 'id': 5678}};
 
-  prep = topaz.prepare_get_message(input_v1)
+  prep = topaz.prepare_get_message(input_v1);
   test.deepEqual([prep.error, prep.version, prep.id], [null, 'v1', 5678]);
 
   test.done();
@@ -103,6 +103,14 @@ exports.test_prepare_post_message = function(test){
 
 var insert_dummy = function(params, callback){
   var query = 'INSERT INTO test_messages (`text`, `lat`, `long`, `date`) VALUES(:text, :lat, :long, :date)';
+  params.date = new Date().getTime();
+  mysql_helper.doQuery(query, params, function(error, results){
+    callback(results.insertId);
+  });
+};
+
+var insert_dummy_comment = function(params, callback){
+  var query = 'INSERT INTO test_comments (`text`, `date`, `message_id`, `user_id`) VALUES (:text, :date, :message_id, :user_id)';
   params.date = new Date().getTime();
   mysql_helper.doQuery(query, params, function(error, results){
     callback(results.insertId);
@@ -130,12 +138,12 @@ exports.test_mysql_helper = {
 
   _test_environment: function(test){
     test.expect(4);
-    test.equal(process.env.ENV, 'test');
+    test.equal(process.env.NODE_ENV, 'test');
     var query = 'SHOW TABLES FROM topaz';
     var params = {};
     mysql_helper.doQuery(query, params, function(error, results){
       test.equal(error, null);
-      results = _.map(results, function(table){return table.Tables_in_topaz});
+      results = _.map(results, function(table){return table.Tables_in_topaz;});
       test.notEqual(_.indexOf(results, 'messages'), -1);
       test.notEqual(_.indexOf(results, 'test_messages'), -1);
       test.done();
@@ -159,13 +167,13 @@ exports.test_mysql_helper = {
     test: function(test){
       test.expect(3);
       mysql_helper.getPreviews(122, 455, 124, 457, function(error, results){
-	test.equal(error, null);
-	test.notEqual(results.length, 0);
-	var any_value = _.any(results, function(result){
-	  return result.text === '221B Baker Street' && result.lat === 123 && result.long === 456;
-	});
-	test.equal(any_value, true);
-	test.done();
+        test.equal(error, null);
+        test.notEqual(results.length, 0);
+        var any_value = _.any(results, function(result){
+          return result.text === '221B Baker Street' && result.lat === 123 && result.long === 456;
+        });
+        test.equal(any_value, true);
+        test.done();
       });
     }
   },
@@ -177,15 +185,15 @@ exports.test_mysql_helper = {
     test: function(test){
       var req = {'params':{'version': 'v1.1', 'lat1': 99, 'long1': 79, 'lat2': 199, 'long2': 179}};
       var res = {
-	json: function(object){
-	  test.strictEqual(object.error, undefined);
-	  test.notEqual(object.data.length, 0);
-	  var any_value = _.any(object.data, function(result){
-	    return result.text === 'Don\'t panic !' && result.lat === 111 && result.long === 101;
-	  });
-	  test.equal(any_value, true);
-	  test.done();
-	}
+        json: function(object){
+          test.strictEqual(object.error, undefined);
+          test.notEqual(object.data.length, 0);
+          var any_value = _.any(object.data, function(result){
+            return result.text === 'Don\'t panic !' && result.lat === 111 && result.long === 101;
+          });
+          test.equal(any_value, true);
+          test.done();
+        }
       };
       topaz.get_previews(req, res);
     }
@@ -196,11 +204,11 @@ exports.test_mysql_helper = {
       test.expect(4);
       var message = {'lat':48,'long':15,'text':'Flynn Lives !'};
       mysql_helper.postMessage(message, function(error, results){
-	test.equal(error, null);
-	test.notStrictEqual(results, undefined);
-	test.strictEqual(results[0], undefined);
-	test.ok(results.insertId);
-	test.done();
+        test.equal(error, null);
+        test.notStrictEqual(results, undefined);
+        test.strictEqual(results[0], undefined);
+        test.ok(results.insertId);
+        test.done();
       });
     }
   },
@@ -210,15 +218,15 @@ exports.test_mysql_helper = {
       test.expect(4);
       var req = {'params': {'version': 'v1.1'}, 'body': {'lat':23,'long':42,'text':'The cake is a lie'}};
       var res = {
-	'json': function(object){
-	  test.equal(object.error, null);
-	  test.ok(object.data.date);
-	  test.ok(object.data.id);
-	  delete object.data.date;
-	  delete object.data.id;
-	  test.deepEqual(object, {'success': {'code': 201, 'msg': 'Created'}, 'data': {'lat': 23, 'long': 42, 'text': 'The cake is a lie'}});
-	  test.done();
-	}
+        'json': function(object){
+           test.equal(object.error, null);
+           test.ok(object.data.date);
+           test.ok(object.data.id);
+           delete object.data.date;
+           delete object.data.id;
+           test.deepEqual(object, {'success': {'code': 201, 'msg': 'Created'}, 'data': {'lat': 23, 'long': 42, 'text': 'The cake is a lie'}});
+           test.done();
+        }
       };
       topaz.post_message(req, res);
     }
@@ -228,8 +236,8 @@ exports.test_mysql_helper = {
     setUp: function(callback){
       var self = this;
       insert_dummy({'lat': 25, 'long': 26, 'text': 'Draco Dormiens Nunquam Titillandus'}, function(id){
-	self.id = id;
-	callback();
+        self.id = id;
+        callback();
       });
     },
     test: function(test){
@@ -237,12 +245,12 @@ exports.test_mysql_helper = {
       test.notEqual(this.id, undefined);
       var self = this;
       mysql_helper.getMessage(this.id, function(error, result){
-	test.equal(error, null);
-	test.strictEqual(result[0], undefined);
-	test.ok(result.date);
-	delete result.date;
-	test.deepEqual(result, {'id': self.id, 'lat':25, 'long':26, 'text': 'Draco Dormiens Nunquam Titillandus'});
-	test.done();
+        test.equal(error, null);
+        test.strictEqual(result[0], undefined);
+        test.ok(result.date);
+        delete result.date;
+        test.deepEqual(result, {'id': self.id, 'lat':25, 'long':26, 'text': 'Draco Dormiens Nunquam Titillandus'});
+        test.done();
       });
     }
   },
@@ -251,8 +259,8 @@ exports.test_mysql_helper = {
     setUp: function(callback){
       var self = this;
       insert_dummy({'lat': 23, 'long': 8, 'text': 'Move fast and break things.'}, function(id){
-	self.id = id;
-	callback();
+        self.id = id;
+        callback();
       });
     },
     test: function(test){
@@ -260,15 +268,48 @@ exports.test_mysql_helper = {
       var req = {'params': {'version': 'v1.1', 'id': this.id}};
       var self = this;
       var res = {
-	json: function(object){
-	  test.equal(object.error, undefined);
-	  test.ok(object.data.date);
-	  delete object.data.date;
-	  test.deepEqual(object.data, {'id': self.id, 'lat': 23, 'long': 8, 'text': 'Move fast and break things.'});
-	  test.done();
-	}
+        json: function(object){
+          test.equal(object.error, undefined);
+          test.ok(object.data.date);
+          delete object.data.date;
+          test.deepEqual(object.data, {'id': self.id, 'lat': 23, 'long': 8, 'text': 'Move fast and break things.'});
+          test.done();
+        }
       };
       topaz.get_message(req, res);
+    }
+  },
+  
+  test_postComment: {
+    test: function(test){
+      test.expect(4);
+      var comment = {'text': 'hello', 'message_id': 1, 'user_id': 2};
+      mysql_helper.postComment(comment, function(error, results){
+        test.equal(error, null);
+        test.notStrictEqual(results, undefined);
+        test.strictEqual(results[0], undefined);
+        test.ok(results.insertId);
+        test.done();
+      });
+    }
+  },
+
+  test_getComments: {
+    setUp: function(callback){
+      this.message_id = 3;
+      insert_dummy_comment({'user_id': 1,'message_id': this.message_id,'text': 'dummy comment'}, function(){
+        callback();
+      });
+    },
+    test: function(test){
+      test.expect(2);
+      mysql_helper.getComments(this.message_id, function(error, results){
+	    test.equal(error, null);
+      delete results[0].date;
+      delete results[0].id;
+	    test.deepEqual(results[0], {'user_id': 1, 'text': 'dummy comment', likes: 0, dislikes: 0});
+	    test.done();
+      });
     }
   }
 };

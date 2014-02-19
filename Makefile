@@ -1,4 +1,4 @@
-export ENV=test
+export NODE_ENV=test
 test:
 	nodeunit tests.js
 

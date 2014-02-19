@@ -134,11 +134,83 @@ var post_message = function(req, res){
   }else{
     mysql_helper.postMessage(prep.message, function (error, result){
       if(error){
-	console.error(error);
-	res.json(formatError(500, error));
+	      console.error(error);
+	      res.json(formatError(500, error));
       }else{
-	message['id'] = result.insertId;
-	res.json(formatResponse(prep.version, 201, 'Created', message));
+        message['id'] = result.insertId;
+        res.json(formatResponse(prep.version, 201, 'Created', message));
+      }
+    });
+  }
+};
+
+var prepare_get_comments = function(req){
+  var message_id = req.params.message_id;
+
+  var rules = [{
+    rule: (message_id !== undefined),
+    code: 400,
+    msg: "Missing 'message_id' parameter"
+  }];
+
+  var error = handleError(rules);
+  return {error: error, version: req.params.version, message_id: message_id};
+};
+
+var get_comments = function(req, res){
+  var prep = prepare_get_comments(req);
+  if(prep.error !== null){
+    res.json(prep.error);
+  }else{
+    mysql_helper.getComments(prep.message_id, function(error, results){
+      if(error){
+        console.error(error);
+        res.json(formatError(500, error));
+      }else{
+        // TODO: update this when authentication is done
+        _.each(results, function(comment){
+          comment.likeStatus = 'NONE';
+        });
+        res.json(formatResponse(prep.version, 200, 'OK', results));
+      }
+    });
+  }
+};
+
+var prepare_post_comment = function(req){
+  var comment = req.body;
+
+  var rules = [
+    {
+      rule: (comment.message_id !== undefined),
+      code: 400,
+      msg: "Missing 'message_id' parameter"
+    },{
+      rule: (_.isString(comment.user)),
+      code: 400,
+      msg: "Missing 'user' parameter"
+    },{
+      rule: (_.isString(comment.text)),
+      code: 400,
+      msg: "Missing 'text' parameter"
+    }
+  ];
+  var error = handleError(rules);
+  return {error: error, version: req.params.version, comment: comment};
+};
+
+var post_comment = function(req, res){
+  var prep = prepare_post_comment(req);
+  
+  if(prep.error !== null) res.json(prep.error);
+  else{
+    mysql_helper.postComment(prep.comment, function(error, result){
+      if(error){
+        console.error(error);
+        res.json(formatError(500, error));
+      }else{
+        prep.comment['id'] = result.insertId;
+        res.json(formatResponse(prep.version, 201, 'Created', prep.comment));
       }
     });
   }
@@ -172,6 +244,10 @@ exports.prepare_get_message = prepare_get_message;
 exports.get_message = get_message;
 exports.prepare_post_message = prepare_post_message;
 exports.post_message = post_message;
+exports.prepare_get_comments = prepare_get_comments;
+exports.get_comments = get_comments;
+exports.prepare_post_comment = prepare_post_comment;
+exports.post_comment = post_comment;
 exports.handleError = handleError;
 exports.formatResponse = formatResponse;
 exports.formatError = formatError;
