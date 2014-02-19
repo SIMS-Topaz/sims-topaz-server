@@ -5,8 +5,9 @@ var crypto = require('crypto');
 
 exports.test_formatError = function(test){
   test.expect(1);
-  var input = topaz.formatError(500, 'A server error happened');
-  var output = {'error': {'code': 500, 'msg': 'A server error happened'}};
+  var code = 500, msg = 'SERVER_ERR', details = 'A server error happened';
+  var input = topaz.formatError(500, msg, details);
+  var output = {'error': {'code': code, 'msg': msg, 'details': details}};
   test.deepEqual(input, output);
   test.done();
 };
@@ -25,14 +26,16 @@ exports.test_formatResponse = function(test){
 };
 
 exports.test_handleError = function(test){
-  test.expect(3);
-  var rules = function (first, second){
-    return [{'rule': first, 'code': 123, 'msg': "First rule went wrong"},
-      {'rule': second, 'code': 456, 'msg': "Second rule went wrong"}];
-  };
-  test.deepEqual(topaz.handleError(rules(false)), {'error': {'code': 123, 'msg': 'First rule went wrong'}});
-  test.deepEqual(topaz.handleError(rules(true, false)), {'error': {'code': 456, 'msg': 'Second rule went wrong'}});
-  test.deepEqual(topaz.handleError(rules(false, false)), {'error': {'code': 123, 'msg': 'First rule went wrong'}});
+  test.expect(2);
+  var rule_1 = {'rule': false, 'code': 123, 'msg': 'UKNOWN_ERR_1', 'details': "First rule went wrong"};
+  var rule_2 = {'rule': false, 'code': 456, 'msg': 'UKNOWN_ERR_2', 'details': "Second rule went wrong"};
+  var rules = [rule_1, rule_2];
+  var error = function(rule){delete rule.rule; return rule;};
+
+  test.deepEqual(topaz.handleError(rules), {'error': error(rule_1)});
+  var rule_1 = {'rule': true, 'code': 123, 'msg': 'UKNOWN_ERR_1', 'details': "First rule went wrong"};
+  var rules = [rule_1, rule_2];
+  test.deepEqual(topaz.handleError(rules), {'error': error(rule_2)});
   test.done();
 };
 
