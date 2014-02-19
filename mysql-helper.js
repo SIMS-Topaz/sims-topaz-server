@@ -8,6 +8,7 @@ var mysql = require('mysql');
 var _     = require('underscore');
 var client;
 var table = (process.env.ENV==='test')?'test_messages':'messages';
+var comment_table = (process.env.NODE_ENV==='test')?'test_comments':'comments';
 
 /*=========================== CONNECTION ===========================*/
 var openConnection = function(){
@@ -132,6 +133,26 @@ var postMessage = function(message, callback){
   doQuery(query, message, callback);
 };
 
+// get comments related to 'message_id'
+var getComments = function(message_id, callback){
+  var query = 'SELECT `id`, `text`, `date`, `user_id`, `likes`, `dislikes`'
+    + ' FROM  '+comment_table
+    + ' WHERE `message_id` = :message_id';
+  var params = {message_id: message_id};
+  doQuery(query, params, function(error, results){
+    callback(error, results);
+  });
+};
+
+// inserts new comment
+var postComment = function(comment, callback){
+  comment.date = new Date().getTime();
+  comment.user_id = 'Mr DEFAULT';
+  var query = 'INSERT INTO ' + comment_table + ' (`text`, `date`, `message_id`, `user_id`)'
+    + ' VALUES (:text, :date, :message_id, :user_id)';
+  doQuery(query, comment, callback);
+};
+
 // removes a row
 //TODO: upgrade it to be useful
 var removeData = function(id){
@@ -151,4 +172,6 @@ exports.handleDisconnect = handleDisconnect;
 exports.getPreviews      = getPreviews;
 exports.getMessage       = getMessage;
 exports.postMessage      = postMessage;
+exports.getComments      = getComments;
+exports.postComment      = postComment;
 exports.removeData       = removeData;
