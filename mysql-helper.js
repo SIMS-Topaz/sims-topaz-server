@@ -7,8 +7,9 @@ var conf  = require('./conf.js');
 var mysql = require('mysql');
 var _     = require('underscore');
 var client;
-var table = (process.env.ENV==='test')?'test_messages':'messages';
 var comment_table = (process.env.NODE_ENV==='test')?'test_comments':'comments';
+var message_table = (process.env.NODE_ENV==='test')?'test_messages':'messages';
+var user_table = (process.env.NODE_ENV==='test')?'test_users':'users';
 
 /*=========================== CONNECTION ===========================*/
 var openConnection = function(){
@@ -85,7 +86,7 @@ var doQuery = function(query, params, callback){
 // asks previews of all messages around position [lat, long]
 var getPreviews = function(lat, long, lat2, long2, callback){
   var query = 'SELECT `id`, LEFT(`text`, :preview_size) AS `text`, `lat`, `long`, `date`'
-    + ' FROM '+table+' WHERE `lat` BETWEEN :min_lat AND :max_lat'
+    + ' FROM '+message_table+' WHERE `lat` BETWEEN :min_lat AND :max_lat'
     + ' AND `long` BETWEEN :min_long AND :max_long'
     + ' ORDER BY `id` DESC LIMIT 1000';
   var params = {};
@@ -117,7 +118,7 @@ var getPreviews = function(lat, long, lat2, long2, callback){
 // asks message with id 'id'
 var getMessage = function(id, callback){
   var query = 'SELECT `id`, `text`, `lat`, `long`, `date`'
-   + ' FROM '+table
+   + ' FROM '+message_table
    + ' WHERE `id`= :id';
   var params = {id: id};
   doQuery(query, params, function(error, results){
@@ -128,8 +129,8 @@ var getMessage = function(id, callback){
 // inserts new message in DB
 var postMessage = function(message, callback){
   message.date = new Date().getTime();
-  var query = 'INSERT INTO '+table+' (`text`, `lat`, `long`, `date`)'
-    + ' VALUES (:text, :lat, :long, :date)';
+  var query = 'INSERT INTO '+message_table+' (`text`, `lat`, `long`, `date`, `user_id`)'
+    + ' VALUES (:text, :lat, :long, :date, :user_id)';
   doQuery(query, message, callback);
 };
 
@@ -156,12 +157,20 @@ var postComment = function(comment, callback){
 // removes a row
 //TODO: upgrade it to be useful
 var removeData = function(id){
-  client.query('DELETE FROM '+table+' WHERE `id` = :id', {id: id}, function(error){
+  client.query('DELETE FROM '+message_table+' WHERE `id` = :id', {id: id}, function(error){
     if(error){
       console.error('ERROR mysql-helper.removeData:' + error);
     }
   });
 };
+
+var getUser = function(username, callback){
+  var query = 'SELECT `id`, `name`, `salt`, `password` FROM `'+user_table+'` WHERE `name`=:username';
+  var params = {'username': username};
+  doQuery(query, params, function(error, results){
+    callback(error, results[0]||null);
+  });
+}
 /*===============================================================*/
 
 /*=========================== EXPORTS ===========================*/
@@ -175,3 +184,4 @@ exports.postMessage      = postMessage;
 exports.getComments      = getComments;
 exports.postComment      = postComment;
 exports.removeData       = removeData;
+exports.getUser	         = getUser;

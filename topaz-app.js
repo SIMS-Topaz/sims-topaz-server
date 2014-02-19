@@ -1,6 +1,7 @@
 var mysql_helper = require('./mysql-helper.js');
 var conf  = require('./conf.js');
 var _ = require ('underscore');
+var crypto = require('crypto');
 
 var get_index = function(req, res){
   res.send('Topaz Server Working!');
@@ -129,10 +130,11 @@ var prepare_post_message = function(req){
 var post_message = function(req, res){
   var prep = prepare_post_message(req);
   var message = prep.message;
+  message.user_id = req.session.user_id;
   if(prep.error !== null){
     res.json(prep.error);
   }else{
-    mysql_helper.postMessage(prep.message, function (error, result){
+    mysql_helper.postMessage(message, function (error, result){
       if(error){
 	      console.error(error);
 	      res.json(formatError(500, error));
@@ -216,6 +218,43 @@ var post_comment = function(req, res){
   }
 };
 
+var get_user_auth = function(req, res){
+  if(req.session.user_name !== undefined && req.session.user_id !== undefined){
+    res.json({'success': {'code': 200, 'msg': 'OK'},
+      'data': {'user_name': req.session.user_name, 'user_id': req.session.user_id}});
+  }else{
+    res.json({'error': {'code': 401, 'msg': 'User not authenticated'}});
+  }
+};
+
+var post_user_auth = function(req, res){
+  if(req.session.user_name !== undefined || req.session.user_id !== undefined){
+    res.json({'error': {'code': 403, 'msg': 'The user is already authenticated'}});
+  }else{
+    mysql_helper.getUser(req.body.user_name, function(error, result){
+      if(error){
+	res.json(formatError(500, "Internal Server Error"));
+      }else{
+	if(result === null){
+	  res.json({'error': {'code': 401, 'msg': 'The user does not exist'}});
+	}else{
+	  var shasum = crypto.createHash('sha1');
+	  shasum.update(result.salt+req.body.user_password);
+	  var hash = shasum.digest('hex');
+	  if(hash !== result.password){
+	    res.json({'error': {'code': 401, 'msg': 'The password does not match'}});
+	  }else{
+	    req.session.user_name = result.name;
+	    req.session.user_id = result.id;
+	    res.json({'success': {'code': 201, 'msg': 'OK'},
+	      'data': {'user_id': result.id, 'user_name': result.name}});
+	  }
+	}
+      }
+    });
+  }
+};
+
 var handleError = function(rules){
   var result = null;
 
@@ -248,6 +287,8 @@ exports.prepare_get_comments = prepare_get_comments;
 exports.get_comments = get_comments;
 exports.prepare_post_comment = prepare_post_comment;
 exports.post_comment = post_comment;
+exports.get_user_auth = get_user_auth;
+exports.post_user_auth = post_user_auth;
 exports.handleError = handleError;
 exports.formatResponse = formatResponse;
 exports.formatError = formatError;
