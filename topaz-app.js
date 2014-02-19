@@ -18,11 +18,13 @@ var prepare_get_previews = function(req){
     {
       rule: (lat1 !== undefined),
       code: 400,
-      msg: "Missing 'lat1' parameter"
+      msg: 'PARAM_ERR',
+      details: "Missing 'lat1' parameter"
     }, {
       rule: (long1 !== undefined),
       code: 400,
-      msg: "Missing 'long1' parameter"
+      msg: 'PARAM_ERR',
+      details: "Missing 'long1' parameter"
     }
   ];
 
@@ -31,11 +33,13 @@ var prepare_get_previews = function(req){
     {
       rule: (lat2 !== undefined),
       code: 400,
-      msg: "Missing 'lat2' parameter"
+      msg: 'PARAM_ERR',
+      details: "Missing 'lat2' parameter"
     }, {
       rule: (long2 !== undefined),
       code: 400,
-      msg: "Missing 'long2' parameter"
+      msg: 'PARAM_ERR',
+      details: "Missing 'long2' parameter"
     });
   }
   
@@ -61,7 +65,7 @@ var get_previews = function(req, res){
     mysql_helper.getPreviews(prep.lat1, prep.long1, prep.lat2, prep.long2, function (error, results) {
       if(error){
 	console.error(error);
-	res.json(formatError(500, error));
+	res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
       }else{
 	results = _.map (results, function (result) {
 	  result['is_full'] = true;
@@ -80,7 +84,8 @@ var prepare_get_message = function(req){
   var rules = [{
       rule: (id !== undefined),
       code: 400,
-      msg: "Missing 'id' parameter"
+      msg: 'PARAM_ERR',
+      details: "Missing 'id' parameter"
     }];
 
   var error = handleError(rules);
@@ -95,7 +100,7 @@ var get_message = function(req, res){
     mysql_helper.getMessage(prep.id, function (error, result){
       if(error){
 	console.error(error);
-	res.json(formatError(500, error));
+	res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
       }else{
 	res.json(formatResponse(prep.version, 200, 'OK', result));
       }
@@ -112,15 +117,18 @@ var prepare_post_message = function(req){
     {
       rule: (_.isNumber(parseFloat(message.lat))),
       code: 400,
-      msg: "Missing 'lat' parameter"
+      msg: 'PARAM_ERR',
+      details: "Missing 'lat' parameter"
     },{
       rule: (_.isNumber(parseFloat(message.long))),
       code: 400,
-      msg: "Missing 'long' parameter"
+      msg: 'PARAM_ERR',
+      details: "Missing 'long' parameter"
     },{
       rule: (_.isString(message.text)),
       code: 400,
-      msg: "Missing 'text' parameter"
+      msg: 'PARAM_ERR',
+      details: "Missing 'text' parameter"
     }
   ];
   var error = handleError(rules);
@@ -136,8 +144,8 @@ var post_message = function(req, res){
   }else{
     mysql_helper.postMessage(message, function (error, result){
       if(error){
-	      console.error(error);
-	      res.json(formatError(500, error));
+	console.error(error);
+	res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
       }else{
         message['id'] = result.insertId;
         res.json(formatResponse(prep.version, 201, 'Created', message));
@@ -152,7 +160,8 @@ var prepare_get_comments = function(req){
   var rules = [{
     rule: (message_id !== undefined),
     code: 400,
-    msg: "Missing 'message_id' parameter"
+    msg: 'PARAM_ERR',
+    details: "Missing 'message_id' parameter"
   }];
 
   var error = handleError(rules);
@@ -167,7 +176,7 @@ var get_comments = function(req, res){
     mysql_helper.getComments(prep.message_id, function(error, results){
       if(error){
         console.error(error);
-        res.json(formatError(500, error));
+        res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
       }else{
         // TODO: update this when authentication is done
         _.each(results, function(comment){
@@ -186,15 +195,18 @@ var prepare_post_comment = function(req){
     {
       rule: (comment.message_id !== undefined),
       code: 400,
-      msg: "Missing 'message_id' parameter"
+      msg: 'PARAM_ERR',
+      details: "Missing 'message_id' parameter"
     },{
       rule: (_.isString(comment.user)),
       code: 400,
-      msg: "Missing 'user' parameter"
+      msg: 'PARAM_ERR',
+      details: "Missing 'user' parameter"
     },{
       rule: (_.isString(comment.text)),
       code: 400,
-      msg: "Missing 'text' parameter"
+      msg: 'PARAM_ERR',
+      details: "Missing 'text' parameter"
     }
   ];
   var error = handleError(rules);
@@ -209,7 +221,7 @@ var post_comment = function(req, res){
     mysql_helper.postComment(prep.comment, function(error, result){
       if(error){
         console.error(error);
-        res.json(formatError(500, error));
+        res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
       }else{
         prep.comment['id'] = result.insertId;
         res.json(formatResponse(prep.version, 201, 'Created', prep.comment));
@@ -223,26 +235,26 @@ var get_user_auth = function(req, res){
     res.json({'success': {'code': 200, 'msg': 'OK'},
       'data': {'user_name': req.session.user_name, 'user_id': req.session.user_id}});
   }else{
-    res.json({'error': {'code': 401, 'msg': 'User not authenticated'}});
+    res.json({'error': {'code': 401, 'msg': 'NOT_AUTH_ERR', 'details': 'User not authenticated'}});
   }
 };
 
 var post_user_auth = function(req, res){
   if(req.session.user_name !== undefined || req.session.user_id !== undefined){
-    res.json({'error': {'code': 403, 'msg': 'The user is already authenticated'}});
+    res.json({'error': {'code': 403, 'msg': 'ALRDY_AUTH_ERR', 'details': 'The user is already authenticated'}});
   }else{
     mysql_helper.getUser(req.body.user_name, function(error, result){
       if(error){
-	res.json(formatError(500, "Internal Server Error"));
+	res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
       }else{
 	if(result === null){
-	  res.json({'error': {'code': 401, 'msg': 'The user does not exist'}});
+	  res.json({'error': {'code': 401, 'msg': 'USER_ERR', 'details': 'The user does not exist'}});
 	}else{
 	  var shasum = crypto.createHash('sha1');
 	  shasum.update(result.salt+req.body.user_password);
 	  var hash = shasum.digest('hex');
 	  if(hash !== result.password){
-	    res.json({'error': {'code': 401, 'msg': 'The password does not match'}});
+	    res.json({'error': {'code': 401, 'msg': 'PASS_ERR', 'details': 'The password does not match'}});
 	  }else{
 	    req.session.user_name = result.name;
 	    req.session.user_id = result.id;
@@ -260,7 +272,7 @@ var handleError = function(rules){
 
   _.every(rules, function(rule){
     if(!rule.rule){
-      result = formatError(rule.code, rule.msg);
+      result = formatError(rule.code, rule.msg, rule.details);
       return false;
     }
     return true;
@@ -272,8 +284,8 @@ var formatResponse = function(version, success_code, success_msg, data){
   return (version === 'v1') ? data : {'success': {'code': success_code, 'msg': success_msg}, 'data': data};
 };
 
-var formatError = function(error_code, error_msg){
-  return {'error': {'code': error_code, 'msg': error_msg}};
+var formatError = function(error_code, error_msg, error_details){
+  return {'error': {'code': error_code, 'msg': error_msg, 'details': error_details}};
 };
 
 exports.get_index = get_index;
