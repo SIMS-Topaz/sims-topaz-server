@@ -85,7 +85,7 @@ var doQuery = function(query, params, callback){
 
 // asks previews of all messages around position [lat, long]
 var getPreviews = function(lat, long, lat2, long2, callback){
-  var query = 'SELECT `id`, LEFT(`text`, :preview_size) AS `text`, `lat`, `long`, `date`'
+  var query = 'SELECT `id`, LEFT(`text`, :preview_size) AS `text`, `lat`, `long`, `date`, `user_id`'
     + ' FROM '+message_table+' WHERE `lat` BETWEEN :min_lat AND :max_lat'
     + ' AND `long` BETWEEN :min_long AND :max_long'
     + ' ORDER BY `id` DESC LIMIT 1000';
@@ -117,12 +117,12 @@ var getPreviews = function(lat, long, lat2, long2, callback){
 
 // asks message with id 'id'
 var getMessage = function(id, callback){
-  var query = 'SELECT `id`, `text`, `lat`, `long`, `date`'
+  var query = 'SELECT `id`, `text`, `lat`, `long`, `date`, `user_id`'
    + ' FROM '+message_table
    + ' WHERE `id`= :id';
   var params = {id: id};
   doQuery(query, params, function(error, results){
-    callback(error, results[0]||null);
+    callback(error, (error===null)?results[0]||null:null);
   });
 };
 
@@ -168,7 +168,7 @@ var getUser = function(username, callback){
   var query = 'SELECT `id`, `name`, `salt`, `password` FROM `'+user_table+'` WHERE `name`=:username';
   var params = {'username': username};
   doQuery(query, params, function(error, results){
-    callback(error, results[0]||null);
+    callback(error, (error===null)?results[0]||null:null);
   });
 }
 /*===============================================================*/
