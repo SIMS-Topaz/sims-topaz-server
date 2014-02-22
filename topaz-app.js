@@ -67,10 +67,6 @@ var get_previews = function(req, res){
 	console.error(error);
 	res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
       }else{
-	results = _.map (results, function (result) {
-	  result['is_full'] = true;
-	  return result;
-	});
 	res.json(formatResponse(prep.version, 200, 'OK', results));
       }
     });
@@ -112,15 +108,14 @@ var prepare_post_message = function(req){
   // curl -X POST -H "Content-Type:application/json" -H "Accept:application/json" http://localhost:8080/api/v1.1/post_message -d '{"lat":12,"long":12,"text":"Hello World"}'
   var message = req.body;
   var version = req.params.version;
-
   var rules = [
     {
-      rule: (_.isNumber(parseFloat(message.lat))),
+      rule: (message.lat !== undefined && _.isNumber(parseFloat(message.lat))),
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'lat' parameter"
     },{
-      rule: (_.isNumber(parseFloat(message.long))),
+      rule: (message.long !== undefined &&_.isNumber(parseFloat(message.long))),
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'long' parameter"

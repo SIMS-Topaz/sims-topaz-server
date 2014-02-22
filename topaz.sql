@@ -2,7 +2,7 @@ CREATE SCHEMA `topaz`;
 
 CREATE TABLE `topaz`.`messages` (
   `id` BIGINT AUTO_INCREMENT NOT NULL PRIMARY KEY,
-  `user_id` TEXT NOT NULL,
+  `user_id` BIGINT NOT NULL,
   `text` TEXT NOT NULL,
   `lat` FLOAT NOT NULL,
   `long` FLOAT NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE `topaz`.`comments` (
   `text` TEXT NOT NULL,
   `date` BIGINT NOT NULL,
   `message_id` BIGINT UNSIGNED NOT NULL,
-  `user_id` TEXT NOT NULL,
+  `user_id` BIGINT NOT NULL,
   `likes` INT UNSIGNED NULL DEFAULT 0,
   `dislikes` INT UNSIGNED NULL DEFAULT 0
 );
@@ -33,7 +33,7 @@ CREATE TABLE `topaz`.`users` (
 CREATE TABLE `topaz`.`test_users` LIKE `topaz`.`users`;
 
 CREATE TABLE `topaz`.`votes` (
-  `user_id` VARCHAR(20) NOT NULL,
+  `user_id` BIGINT NOT NULL,
   `comment_id` BIGINT NOT NULL,
   `vote` VARCHAR(4) NOT NULL,
   PRIMARY KEY (`user_id`, `comment_id`)
