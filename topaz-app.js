@@ -16,43 +16,53 @@ var prepare_get_previews = function(req){
 
   var rules = [
     {
-      rule: (lat1 !== undefined),
+      rule: lat1 !== undefined,
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'lat1' parameter"
-    }, {
-      rule: (long1 !== undefined),
+    },{
+      rule: !isNaN(parseFloat(lat1)),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Invalid 'lat1' parameter"
+    },{
+      rule: long1 !== undefined,
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'long1' parameter"
-    }
-  ];
-
-  if(version === 'v1.1'){
-    rules = rules.concat(
-    {
-      rule: (lat2 !== undefined),
+    },{
+      rule: !isNaN(parseFloat(long1)),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Invalid 'long1' parameter"
+    },{
+      rule: lat2 !== undefined,
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'lat2' parameter"
-    }, {
-      rule: (long2 !== undefined),
+    },{
+      rule: !isNaN(parseFloat(lat2)),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Invalid 'lat2' parameter"
+    },{
+      rule: long2 !== undefined,
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'long2' parameter"
-    });
-  }
+    },{
+      rule: !isNaN(parseFloat(long2)),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Invalid 'long2' parameter"
+    }
+  ];
   
   var error = handleError(rules);
   lat1  = parseFloat(lat1);
   long1 = parseFloat(long1);
-  if(version === 'v1'){
-    lat2  = 50;
-    long2 = null;
-  }else{
-    lat2  = parseFloat(lat2);
-    long2 = parseFloat(long2);
-  }
+  lat2  = parseFloat(lat2);
+  long2 = parseFloat(long2);
 
   return {'error': error, 'version': version, 'lat1': lat1, 'long1': long1, 'lat2': lat2, 'long2': long2};
 };
@@ -64,10 +74,10 @@ var get_previews = function(req, res){
   }else{
     mysql_helper.getPreviews(prep.lat1, prep.long1, prep.lat2, prep.long2, function (error, results) {
       if(error){
-	console.error(error);
-	res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
+        console.error(error);
+        res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
       }else{
-	res.json(formatResponse(prep.version, 200, 'OK', results));
+        res.json(formatResponse(prep.version, 200, 'OK', results));
       }
     });
   }
@@ -95,10 +105,10 @@ var get_message = function(req, res){
   }else{
     mysql_helper.getMessage(prep.id, function (error, result){
       if(error){
-	console.error(error);
-	res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
+        console.error(error);
+        res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
       }else{
-	res.json(formatResponse(prep.version, 200, 'OK', result));
+        res.json(formatResponse(prep.version, 200, 'OK', result));
       }
     });
   }
@@ -110,17 +120,27 @@ var prepare_post_message = function(req){
   var version = req.params.version;
   var rules = [
     {
-      rule: (message.lat !== undefined && _.isNumber(parseFloat(message.lat))),
+      rule: message.lat !== undefined,
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'lat' parameter"
     },{
-      rule: (message.long !== undefined &&_.isNumber(parseFloat(message.long))),
+      rule: !isNaN(parseFloat(message.lat)),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Invalid 'lat' parameter"
+    },{
+      rule: message.long !== undefined,
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'long' parameter"
     },{
-      rule: (_.isString(message.text)),
+      rule: !isNaN(parseFloat(message.long)),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Invalid 'long' parameter"
+    },{
+      rule: message.text !== undefined,
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'text' parameter"
@@ -139,8 +159,8 @@ var post_message = function(req, res){
   }else{
     mysql_helper.postMessage(message, function (error, result){
       if(error){
-	console.error(error);
-	res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
+        console.error(error);
+        res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
       }else{
         message['id'] = result.insertId;
         res.json(formatResponse(prep.version, 201, 'Created', message));
@@ -173,10 +193,6 @@ var get_comments = function(req, res){
         console.error(error);
         res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
       }else{
-        // TODO: update this when authentication is done
-        _.each(results, function(comment){
-          comment.likeStatus = 'NONE';
-        });
         res.json(formatResponse(prep.version, 200, 'OK', results));
       }
     });
@@ -240,23 +256,23 @@ var post_user_auth = function(req, res){
   }else{
     mysql_helper.getUser(req.body.user_name, function(error, result){
       if(error){
-	res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
+        res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
       }else{
-	if(result === null){
-	  res.json({'error': {'code': 401, 'msg': 'USER_ERR', 'details': 'The user does not exist'}});
-	}else{
-	  var shasum = crypto.createHash('sha1');
-	  shasum.update(result.salt+req.body.user_password);
-	  var hash = shasum.digest('hex');
-	  if(hash !== result.password){
-	    res.json({'error': {'code': 401, 'msg': 'PASS_ERR', 'details': 'The password does not match'}});
-	  }else{
-	    req.session.user_name = result.name;
-	    req.session.user_id = result.id;
-	    res.json({'success': {'code': 201, 'msg': 'OK'},
-	      'data': {'user_id': result.id, 'user_name': result.name}});
-	  }
-	}
+        if(result === null){
+          res.json({'error': {'code': 401, 'msg': 'USER_ERR', 'details': 'The user does not exist'}});
+        }else{
+          var shasum = crypto.createHash('sha1');
+          shasum.update(result.salt+req.body.user_password);
+          var hash = shasum.digest('hex');
+          if(hash !== result.password){
+            res.json({'error': {'code': 401, 'msg': 'PASS_ERR', 'details': 'The password does not match'}});
+          }else{
+            req.session.user_name = result.name;
+            req.session.user_id = result.id;
+            res.json({'success': {'code': 201, 'msg': 'OK'},
+              'data': {'user_id': result.id, 'user_name': result.name}});
+          }
+        }
       }
     });
   }

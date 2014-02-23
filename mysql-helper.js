@@ -136,7 +136,7 @@ var postMessage = function(message, callback){
 
 // get comments related to 'message_id'
 var getComments = function(message_id, callback){
-  var query = 'SELECT `id`, `text`, `date`, `user_id`, `likes`, `dislikes`'
+  var query = 'SELECT `id`, `text`, `date`, `user_id`, `message_id`'
     + ' FROM  '+comment_table
     + ' WHERE `message_id` = :message_id';
   var params = {message_id: message_id};
@@ -148,7 +148,7 @@ var getComments = function(message_id, callback){
 // inserts new comment
 var postComment = function(comment, callback){
   comment.date = new Date().getTime();
-  comment.user_id = 'Mr DEFAULT';
+  comment.user_id = 1;
   var query = 'INSERT INTO ' + comment_table + ' (`text`, `date`, `message_id`, `user_id`)'
     + ' VALUES (:text, :date, :message_id, :user_id)';
   doQuery(query, comment, callback);
