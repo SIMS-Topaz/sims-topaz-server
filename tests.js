@@ -105,9 +105,30 @@ exports.test_prepare_post_message = function(test){
   test.done();
 };
 
+exports.test_prepare_post_like_status = function(test){
+  test.expect(5);
+  var input = {params: {version: 'v1.1'}, body: {message_id: 1, user_id: 2, likeStatus: 'LIKED'}};
+  var prep = topaz.prepare_post_like_status(input);
+  
+  test.deepEqual(prep, {error: null, version: 'v1.1', likeStatus: {message_id: 1, user_id: 2, likeStatus: 'LIKED'}});
+  
+  input.body.likeStatus = 'BAD';
+  prep = topaz.prepare_post_like_status(input);
+  test.notEqual(prep.error, null);
+  test.equal(prep.error.error.code, 400);
+  
+  delete input.body.user_id;
+  prep = topaz.prepare_post_like_status(input);
+  test.notEqual(prep.error, null);
+  test.equal(prep.error.error.code, 400);
+  
+  test.done();
+};
+
 var insert_dummy_message = function(params, callback){
+  params.user_id = params.user_id || 99;
   var query = 'INSERT INTO test_messages (`text`, `lat`, `long`, `date`, `user_id`)'
-    + ' VALUES(:text, :lat, :long, :date, 99)';
+    + ' VALUES(:text, :lat, :long, :date, :user_id)';
   params.date = new Date().getTime();
   mysql_helper.doQuery(query, params, function(error, results){
     callback(results.insertId);
@@ -120,6 +141,14 @@ var insert_dummy_comment = function(params, callback){
   params.date = new Date().getTime();
   mysql_helper.doQuery(query, params, function(error, results){
     callback(results.insertId);
+  });
+};
+
+var insert_dummy_user = function(params, callback){
+  var query = 'INSERT INTO test_users (`name`, `email`, `password`, `salt`)'
+    + ' VALUES (:name, :email, :password, :salt)';
+  mysql_helper.doQuery(query, params, function(error, result){
+    callback(result.insertId);
   });
 };
 
@@ -249,7 +278,7 @@ exports.test_mysql_helper = {
         test.strictEqual(result[0], undefined);
         test.ok(result.date);
         delete result.date;
-        test.deepEqual(result, {'id': self.id, 'lat':25, 'long':26, 'text': 'Draco Dormiens Nunquam Titillandus'});
+        test.deepEqual(result, {'id': self.id, 'lat':25, 'long':26, 'text': 'Draco Dormiens Nunquam Titillandus', user_id: 99});
         test.done();
       });
     }
@@ -272,7 +301,7 @@ exports.test_mysql_helper = {
           test.equal(object.error, undefined);
           test.ok(object.data.date);
           delete object.data.date;
-          test.deepEqual(object.data, {'id': self.id, 'lat': 23, 'long': 8, 'text': 'Move fast and break things.'});
+          test.deepEqual(object.data, {'id': self.id, 'lat': 23, 'long': 8, 'text': 'Move fast and break things.', user_id: 99});
           test.done();
         }
       };
@@ -303,11 +332,12 @@ exports.test_mysql_helper = {
     },
     test: function(test){
       test.expect(2);
+      var self = this;
       mysql_helper.getComments(this.message_id, function(error, results){
 	    test.equal(error, null);
       delete results[0].date;
       delete results[0].id;
-	    test.deepEqual(results[0], {'user_id': 1, 'text': 'dummy comment', likes: 0, dislikes: 0});
+	    test.deepEqual(results[0], {'user_id': 1, message_id: self.message_id, 'text': 'dummy comment'});
 	    test.done();
       });
     }
@@ -317,7 +347,7 @@ exports.test_mysql_helper = {
     test_auth: function(test){
       test.expect(2);
       var input = {'user_name': 'sherlock', 'user_id': 99};
-      var req = {'session': input}
+      var req = {'session': input};
       var res = {
 	json: function(object){
 	  test.notStrictEqual(object.success, undefined);
@@ -330,7 +360,7 @@ exports.test_mysql_helper = {
     test_unauth: function(test){
       test.expect(1);
       var input = {};
-      var req = {'session': input}
+      var req = {'session': input};
       var res = {
 	json: function(object){
 	  test.notStrictEqual(object.error, undefined);
@@ -357,7 +387,7 @@ exports.test_mysql_helper = {
     test_auth: function(test){
       test.expect(2);
       var input = {'user_name': 'john', 'user_id': this.user_id};
-      var req = {'session': input}
+      var req = {'session': input};
       var res = {
 	json: function(object){
 	  test.notStrictEqual(object.error, undefined);
@@ -370,7 +400,7 @@ exports.test_mysql_helper = {
     test_unauth_no_user: function(test){
       test.expect(2);
       var input = {'user_name': 'mrs_hudson'};
-      var req = {'session': {}, body: input}
+      var req = {'session': {}, body: input};
       var res = {
 	json: function(object){
 	  test.notStrictEqual(object.error, undefined);
@@ -383,7 +413,7 @@ exports.test_mysql_helper = {
     test_unauth_no_pwd: function(test){
       test.expect(2);
       var input = {'user_name': 'john', 'user_password': 'doe'};
-      var req = {'session': {}, 'body': input}
+      var req = {'session': {}, 'body': input};
       var res = {
 	json: function(object){
 	  test.notStrictEqual(object.error, undefined);
@@ -396,7 +426,7 @@ exports.test_mysql_helper = {
     test_unauth: function(test){
       test.expect(2);
       var input = {'user_name': 'john', 'user_password': 'watson'};
-      var req = {'session': {}, 'body': input}
+      var req = {'session': {}, 'body': input};
       var res = {
 	json: function(object){
 	  test.notStrictEqual(object.success, undefined);
@@ -407,5 +437,171 @@ exports.test_mysql_helper = {
       topaz.post_user_auth(req, res);
     }
   },
+  
+  test_postLikeStatus_noneToLiked: {
+    setUp: function(callback){
+      var self = this;
+      insert_dummy_user({name: 'Bob', email: 'bob@email.fr', password:'a', salt:'a'}, function(user_id){
+        self.user_id = user_id;
+        insert_dummy_message({text: 'test_postLikeStatus_noneToLiked', lat: 101, long:202, user_id: user_id}, function(message_id){
+          self.message_id = message_id;
+          callback();
+        });
+      });
+    },
+    test: function(test){
+      test.expect(2);
+      var self = this;
+      var likeStatus = {message_id: this.message_id, user_id: this.user_id, likeStatus: 'LIKED'};
+      mysql_helper.postLikeStatus(likeStatus, function(error, message){
+        if(error) console.log(error);
+        test.equal(error, null);
+        delete message.date;
+        test.deepEqual(message, {id: self.message_id, name: 'Bob', text: 'test_postLikeStatus_noneToLiked', likes: 1, dislikes: 0});
+        test.done();
+      });
+    }
+  },
+  
+  test_postLikeStatus_noneToDisliked: {
+    setUp: function(callback){
+      var self = this;
+      insert_dummy_user({name: 'Bab', email: 'bab@email.fr', password:'a', salt:'a'}, function(user_id){
+        self.user_id = user_id;
+        insert_dummy_message({text: 'test_postLikeStatus_noneToDisliked', lat: 101, long:202, user_id: user_id}, function(message_id){
+          self.message_id = message_id;
+          callback();
+        });
+      });
+    },
+    test: function(test){
+      test.expect(2);
+      var self = this;
+      var likeStatus = {message_id: this.message_id, user_id: this.user_id, likeStatus: 'DISLIKED'};
+      mysql_helper.postLikeStatus(likeStatus, function(error, message){
+        if(error) console.log(error);
+        test.equal(error, null);
+        delete message.date;
+        test.deepEqual(message, {id: self.message_id, name: 'Bab', text: 'test_postLikeStatus_noneToDisliked', likes: 0, dislikes: 1});
+        test.done();
+      });
+    }
+  },
+  
+  test_postLikeStatus_likedToDisliked: {
+    setUp: function(callback){
+      var self = this;
+      insert_dummy_user({name: 'Bub', email: 'bub@email.fr', password:'a', salt:'a'}, function(user_id){
+        self.user_id = user_id;
+        insert_dummy_message({text: 'test_postLikeStatus_likedToDisliked', lat: 111, long:222, user_id: user_id}, function(message_id){
+          self.message_id = message_id;
+          var likeStatus = {message_id: self.message_id, user_id: self.user_id, likeStatus: 'LIKED'};
+          mysql_helper.postLikeStatus(likeStatus, function(error, result){
+            if(error) console.log(error);
+            callback();
+          });
+        });
+      });
+    },
+    test: function(test){
+      test.expect(2);
+      var self = this;
+      var likeStatus = {message_id: this.message_id, user_id: this.user_id, likeStatus: 'DISLIKED'};
+      mysql_helper.postLikeStatus(likeStatus, function(error, message){
+        if(error) console.log(error);
+        test.equal(error, null);
+        delete message.date;
+        test.deepEqual(message, {id: self.message_id, name: 'Bub', text: 'test_postLikeStatus_likedToDisliked', likes: 0, dislikes: 1});
+        test.done();
+      });
+    }
+  },
+  
+  test_postLikeStatus_likedToNone: {
+    setUp: function(callback){
+      var self = this;
+      insert_dummy_user({name: 'Bib', email: 'bib@email.fr', password:'a', salt:'a'}, function(user_id){
+        self.user_id = user_id;
+        insert_dummy_message({text: 'test_postLikeStatus_likedToNone', lat: 111, long:222, user_id: user_id}, function(message_id){
+          self.message_id = message_id;
+          var likeStatus = {message_id: self.message_id, user_id: self.user_id, likeStatus: 'LIKED'};
+          mysql_helper.postLikeStatus(likeStatus, function(error, result){
+            if(error) console.log(error);
+            callback();
+          });
+        });
+      });
+    },
+    test: function(test){
+      test.expect(2);
+      var self = this;
+      var likeStatus = {message_id: this.message_id, user_id: this.user_id, likeStatus: 'NONE'};
+      mysql_helper.postLikeStatus(likeStatus, function(error, message){
+        if(error) console.log(error);
+        test.equal(error, null);
+        delete message.date;
+        test.deepEqual(message, {id: self.message_id, name: 'Bib', text: 'test_postLikeStatus_likedToNone', likes: 0, dislikes: 0});
+        test.done();
+      });
+    }
+  },
+  
+  test_postLikeStatus_dislikedToLiked: {
+    setUp: function(callback){
+      var self = this;
+      insert_dummy_user({name: 'Beb', email: 'beb@email.fr', password:'a', salt:'a'}, function(user_id){
+        self.user_id = user_id;
+        insert_dummy_message({text: 'test_postLikeStatus_dislikedToLiked', lat: 111, long:222, user_id: user_id}, function(message_id){
+          self.message_id = message_id;
+          var likeStatus = {message_id: self.message_id, user_id: self.user_id, likeStatus: 'DISLIKED'};
+          mysql_helper.postLikeStatus(likeStatus, function(error, result){
+            if(error) console.log(error);
+            callback();
+          });
+        });
+      });
+    },
+    test: function(test){
+      test.expect(2);
+      var self = this;
+      var likeStatus = {message_id: this.message_id, user_id: this.user_id, likeStatus: 'LIKED'};
+      mysql_helper.postLikeStatus(likeStatus, function(error, message){
+        if(error) console.log(error);
+        test.equal(error, null);
+        delete message.date;
+        test.deepEqual(message, {id: self.message_id, name: 'Beb', text: 'test_postLikeStatus_dislikedToLiked', likes: 1, dislikes: 0});
+        test.done();
+      });
+    }
+  },
+  
+  test_postLikeStatus_dislikedToNone: {
+    setUp: function(callback){
+      var self = this;
+      insert_dummy_user({name: 'Byb', email: 'byb@email.fr', password:'a', salt:'a'}, function(user_id){
+        self.user_id = user_id;
+        insert_dummy_message({text: 'test_postLikeStatus_dislikedToNone', lat: 111, long:222, user_id: user_id}, function(message_id){
+          self.message_id = message_id;
+          var likeStatus = {message_id: self.message_id, user_id: self.user_id, likeStatus: 'DISLIKED'};
+          mysql_helper.postLikeStatus(likeStatus, function(error, result){
+            if(error) console.log(error);
+            callback();
+          });
+        });
+      });
+    },
+    test: function(test){
+      test.expect(2);
+      var self = this;
+      var likeStatus = {message_id: this.message_id, user_id: this.user_id, likeStatus: 'NONE'};
+      mysql_helper.postLikeStatus(likeStatus, function(error, message){
+        if(error) console.log(error);
+        test.equal(error, null);
+        delete message.date;
+        test.deepEqual(message, {id: self.message_id, name: 'Byb', text: 'test_postLikeStatus_dislikedToNone', likes: 0, dislikes: 0});
+        test.done();
+      });
+    }
+  }
 };
 

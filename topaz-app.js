@@ -278,6 +278,55 @@ var post_user_auth = function(req, res){
   }
 };
 
+var prepare_post_like_status = function(req){
+  var likeStatus = req.body;
+
+  var rules = [
+    {
+      rule: likeStatus.message_id !== undefined,
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Missing 'message_id' parameter"
+    },{
+      rule: likeStatus.user_id !== undefined,
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Missing 'user_id' parameter"
+    },{
+      rule: likeStatus.likeStatus !== undefined,
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Missing 'likeStatus' parameter"
+    },{
+      rule: likeStatus.likeStatus == 'NONE' || likeStatus.likeStatus == 'LIKED' || likeStatus.likeStatus == 'DISLIKED',
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Invalid 'likeStatus' parameter"
+    }
+  ];
+  var error = handleError(rules);
+  return {error: error, version: req.params.version, likeStatus: likeStatus};
+};
+
+var post_like_status = function(req, res){
+  var prep = prepare_post_like_status(req);
+  
+  if(prep.error !== null) res.json(prep.error);
+  else{
+    var likeStatus = prep.likeStatus;
+    likeStatus.user_id = req.session.user_id;
+    mysql_helper.postLikeStatus(likeStatus, function(error, results){
+      if(error){
+        console.error(error);
+        res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
+      }else{
+        var result = _.last(results);
+        res.json(formatResponse(prep.version, 201, 'Created', result));
+      }
+    });
+  }
+};
+
 var handleError = function(rules){
   var result = null;
 
@@ -312,6 +361,8 @@ exports.prepare_post_comment = prepare_post_comment;
 exports.post_comment = post_comment;
 exports.get_user_auth = get_user_auth;
 exports.post_user_auth = post_user_auth;
+exports.prepare_post_like_status = prepare_post_like_status;
+exports.post_like_status = post_like_status;
 exports.handleError = handleError;
 exports.formatResponse = formatResponse;
 exports.formatError = formatError;
