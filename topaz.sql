@@ -17,9 +17,7 @@ CREATE TABLE `topaz`.`comments` (
   `text` TEXT NOT NULL,
   `date` BIGINT NOT NULL,
   `message_id` BIGINT UNSIGNED NOT NULL,
-  `user_id` BIGINT NOT NULL,
-  `likes` INT UNSIGNED NULL DEFAULT 0,
-  `dislikes` INT UNSIGNED NULL DEFAULT 0
+  `user_id` BIGINT NOT NULL
 );
 CREATE TABLE `topaz`.`test_comments` LIKE `topaz`.`comments`;
 
