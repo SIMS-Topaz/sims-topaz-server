@@ -280,7 +280,10 @@ var post_user_auth = function(req, res){
 
 var prepare_post_like_status = function(req){
   var likeStatus = req.body;
-
+  likeStatus.message_id = likeStatus.id;
+  delete likeStatus.id;
+  likeStatus.user_id = req.session.user_id;
+  
   var rules = [
     {
       rule: likeStatus.message_id !== undefined,
@@ -313,9 +316,7 @@ var post_like_status = function(req, res){
   
   if(prep.error !== null) res.json(prep.error);
   else{
-    var likeStatus = prep.likeStatus;
-    likeStatus.user_id = req.session.user_id;
-    mysql_helper.postLikeStatus(likeStatus, function(error, results){
+    mysql_helper.postLikeStatus(prep.likeStatus, function(error, results){
       if(error){
         console.error(error);
         res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));

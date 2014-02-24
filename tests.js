@@ -40,7 +40,7 @@ exports.test_handleError = function(test){
 };
 
 exports.test_prepare_get_previews = function(test){
-  test.expect(7);
+  test.expect(3);
   var input = {'params': {'version': 'v1.1', 'lat1': 25, 'long1': 50, 'lat2': 75, 'long2': 100}};
 
   var prep = topaz.prepare_get_previews(input);
@@ -52,7 +52,7 @@ exports.test_prepare_get_previews = function(test){
   test.notEqual(prep.error, null);
   test.equal(prep.error.error.code, 400);
 
-  var input_v1 = {'params': {'version': 'v1', 'lat1': 15, 'long1': 30, 'lat2': 45, 'long2': 60}};
+  /*var input_v1 = {'params': {'version': 'v1', 'lat1': 15, 'long1': 30, 'lat2': 45, 'long2': 60}};
 
   prep = topaz.prepare_get_previews(input_v1);
   test.deepEqual([prep.error, prep.version, prep.lat1, prep.long1, prep.lat2, prep.long2], [null, 'v1', 15, 30, 50, null]);
@@ -66,7 +66,7 @@ exports.test_prepare_get_previews = function(test){
 
   prep = topaz.prepare_get_previews(input_v1);
   test.notEqual(prep.error, null);
-  test.equal(prep.error.error.code, 400);
+  test.equal(prep.error.error.code, 400);*/
 
   test.done();
 };
@@ -107,7 +107,7 @@ exports.test_prepare_post_message = function(test){
 
 exports.test_prepare_post_like_status = function(test){
   test.expect(5);
-  var input = {params: {version: 'v1.1'}, body: {message_id: 1, user_id: 2, likeStatus: 'LIKED'}};
+  var input = {params: {version: 'v1.1'}, session: {user_id: 2}, body: {id: 1, likeStatus: 'LIKED'}};
   var prep = topaz.prepare_post_like_status(input);
   
   test.deepEqual(prep, {error: null, version: 'v1.1', likeStatus: {message_id: 1, user_id: 2, likeStatus: 'LIKED'}});
@@ -198,7 +198,8 @@ exports.test_mysql_helper = {
         test.equal(error, null);
         test.notEqual(results.length, 0);
         var any_value = _.any(results, function(result){
-          return result.text === '221B Baker Street' && result.lat === 123 && result.long === 456;
+          return result.text === '221B Baker Street' && result.lat === 123 && result.long === 456
+            && result.name === 'user99';
         });
         test.equal(any_value, true);
         test.done();
@@ -278,7 +279,7 @@ exports.test_mysql_helper = {
         test.strictEqual(result[0], undefined);
         test.ok(result.date);
         delete result.date;
-        test.deepEqual(result, {'id': self.id, 'lat':25, 'long':26, 'text': 'Draco Dormiens Nunquam Titillandus', user_id: 99});
+        test.deepEqual(result, {'id': self.id, name:'user99', 'lat':25, 'long':26, 'text': 'Draco Dormiens Nunquam Titillandus', user_id: 99});
         test.done();
       });
     }
@@ -301,7 +302,7 @@ exports.test_mysql_helper = {
           test.equal(object.error, undefined);
           test.ok(object.data.date);
           delete object.data.date;
-          test.deepEqual(object.data, {'id': self.id, 'lat': 23, 'long': 8, 'text': 'Move fast and break things.', user_id: 99});
+          test.deepEqual(object.data, {'id': self.id, name: 'user99', 'lat': 23, 'long': 8, 'text': 'Move fast and break things.', user_id: 99});
           test.done();
         }
       };
@@ -326,7 +327,7 @@ exports.test_mysql_helper = {
   test_getComments: {
     setUp: function(callback){
       this.message_id = 3;
-      insert_dummy_comment({'user_id': 1,'message_id': this.message_id,'text': 'dummy comment'}, function(){
+      insert_dummy_comment({'user_id': 99,'message_id': this.message_id,'text': 'dummy comment'}, function(){
         callback();
       });
     },
@@ -337,7 +338,7 @@ exports.test_mysql_helper = {
 	    test.equal(error, null);
       delete results[0].date;
       delete results[0].id;
-	    test.deepEqual(results[0], {'user_id': 1, message_id: self.message_id, 'text': 'dummy comment'});
+	    test.deepEqual(results[0], {'user_id': 99, name: 'user99', message_id: self.message_id, 'text': 'dummy comment'});
 	    test.done();
       });
     }
