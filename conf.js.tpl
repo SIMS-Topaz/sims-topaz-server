@@ -15,7 +15,8 @@ exports.mysql =
   port     : ,
   user     : '',
   password : '',
-  database : ''
+  database : '',
+  multipleStatements: 
 };
 
 // date format used in MySQL
