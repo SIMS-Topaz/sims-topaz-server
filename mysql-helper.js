@@ -3,6 +3,7 @@ mysql-helper:
 communique avec la DB topaz
 **************************************************************************/
 
+var crypto = require('crypto');
 var conf  = require('./conf.js');
 var mysql = require('mysql');
 var _     = require('underscore');
@@ -226,9 +227,34 @@ var getUser = function(username, callback){
     callback(error, (error===null)?results[0]||null:null);
   });
 };
-/*===============================================================*/
 
-/*=========================== EXPORTS ===========================*/
+var postSignup = exports.postSignup = function(user_name, user_password, user_email, callback){
+  var exist_query = 'SELECT `nb_name`, `nb_email` FROM (SELECT COUNT(`id`) AS `nb_name` FROM '+user_table+' WHERE `name`=:name) a'
+    + ' CROSS JOIN (SELECT COUNT(`id`) AS `nb_email` FROM users WHERE `email`=:email) b;';
+  var exist_params = {'name': user_name, 'email': user_email};
+  doQuery(exist_query, exist_params, function(error, results){
+    if(error){
+      callback(error, null);
+    }else{
+      if(results[0].nb_name > 0){
+        callback(null, {'insertId': -1, 'nb_name': results[0].nb_name});
+      }else if(results[0].nb_email > 0){
+        callback(null, {'insertId': -1, 'nb_email': results[0].nb_email});
+      }else{
+        var salt = crypto.pseudoRandomBytes(256);
+        var shasum = crypto.createHash('sha1').update(salt);
+        var hsalt = shasum.digest('hex');
+        var shasum = crypto.createHash('sha1').update(hsalt+user_password);
+        var hpass = shasum.digest('hex');
+        var params = {'name': user_name, 'pass': hpass, 'salt': hsalt, 'email': user_email};
+        var query = 'INSERT INTO '+user_table+' (`name`, `email`, `salt`, `password`)'
+          + ' VALUES (:name, :email, :salt, :pass)';
+        doQuery(query, params, callback);
+      }
+    }
+  });
+};
+
 exports.doQuery          = doQuery;
 exports.openConnection   = openConnection;
 exports.closeConnection  = closeConnection;

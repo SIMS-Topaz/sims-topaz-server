@@ -31,10 +31,22 @@ var insert_dummy_comment = function(params, callback){
   });
 };
 
+var insert_dummy_user = function(params, callback){
+  var query = 'INSERT INTO test_users (`name`, `email`, `salt`, `password`)'
+    + ' VALUES (:name, :email, :salt, :pass)';
+  params.salt = 'b176e76607ef6286a8e54a7e2aa7ef39446efb55';
+  mysql_helper.doQuery(query, params, function(error, results){
+    if(error !== null){throw Error('Unable to create a dummy user'+error);};
+    var inserted_user = params;
+    inserted_user.id = results.insertId;
+    callback(inserted_user);
+  });
+};
+
 //Actual tests
 describe('topaz-app.js', function(){
   after(function(done){
-    mysql_helper.doQuery("DELETE FROM `test_messages`;", {}, function(error, results){
+    mysql_helper.doQuery("DELETE FROM `test_messages`; DELETE FROM `test_users`;", {}, function(error, results){
       mysql_helper.closeConnection();
       done();
     });
@@ -201,6 +213,37 @@ describe('topaz-app.js', function(){
       };
       topaz.get_comments(req, res);
       });
+    });
+  });
+
+  describe('prepare_post_signup()', function(){
+    it('should return a valid signup query', function(done){
+      var name = 'mr_test', pass = 'yours_truly_2095', email = 'mr_test@mock.org';
+      var req = {'body': {'user_name': name, 'user_password': pass, 'user_email': email}};
+
+      var actual = topaz.prepare_post_signup(req);
+      (actual.error === null).should.be.true;
+      actual.user_name.should.equal(name);
+      actual.user_password.should.equal(pass);
+      actual.user_email.should.equal(email);
+      done();
+    });
+  });
+
+  describe('post_signup()', function(){
+    it('should create a user', function(done){
+      var name = 'oliver_queen';
+      var input = {'user_name': name, 'user_password': 'felicity', 'user_email': 'oli.queen@staronline.com'};
+      var req = {'body': input};
+      var res = {
+        json: function(actual){
+          (actual.error === undefined).should.be.true;
+          actual.success.code.should.equal(201);
+          actual.data.user_name.should.equal(name);
+          done();
+        }
+      };
+      topaz.post_signup(req, res);
     });
   });
 });
