@@ -86,9 +86,11 @@ var doQuery = function(query, params, callback){
 
 // asks previews of all messages around position [lat, long]
 var getPreviews = function(lat, long, lat2, long2, callback){
-  var query = 'SELECT `id`, LEFT(`text`, :preview_size) AS `text`, `lat`, `long`, `date`, `user_id`'
-    + ' FROM '+message_table+' WHERE `lat` BETWEEN :min_lat AND :max_lat'
-    + ' AND `long` BETWEEN :min_long AND :max_long'
+  var query = 'SELECT `messages`.`id`, LEFT(`messages`.`text`, :preview_size) AS `text`, '
+    + ' `messages`.`lat`, `messages`.`long`, `messages`.`date`, `messages`.`user_id`, `users`.`name`'
+    + ' FROM '+message_table+' AS `messages`, '+user_table+' AS `users`'
+    + ' WHERE `lat` BETWEEN :min_lat AND :max_lat AND `long` BETWEEN :min_long AND :max_long'
+    + ' AND `users`.`id` = `messages`.`user_id`'
     + ' ORDER BY `id` DESC LIMIT 1000';
   var params = {};
   
@@ -137,9 +139,10 @@ var postMessage = function(message, callback){
 
 // get comments related to 'message_id'
 var getComments = function(message_id, callback){
-  var query = 'SELECT `id`, `text`, `date`, `user_id`, `message_id`'
-    + ' FROM  '+comment_table
-    + ' WHERE `message_id` = :message_id';
+  var query = 'SELECT `comments`.`id`, `comments`.`text`, `comments`.`date`, `comments`.`user_id`, '
+    + '`comments`.`message_id`, `users`.`name`'
+    + ' FROM '+comment_table+' AS `comments`, '+user_table+' AS `users`'
+    + ' WHERE `comments`.`message_id` = :message_id AND `users`.`id` = `comments`.`user_id`';
   var params = {message_id: message_id};
   doQuery(query, params, function(error, results){
     callback(error, results);
@@ -155,6 +158,11 @@ var postComment = function(comment, callback){
   doQuery(query, comment, callback);
 };
 
+/*
+ * @param {object} likeStatus: {message_id, user_id, likeStatus}
+ * @param {function} callback
+ * @returns {object} {id, text, date, likes, dislikes, name}
+ */
 var postLikeStatus = function(likeStatus, callback){
   var query_vote = 'SELECT `vote` FROM ' + vote_table
     + ' WHERE `message_id` = :message_id AND `user_id` = :user_id';
