@@ -279,7 +279,7 @@ exports.test_mysql_helper = {
         test.strictEqual(result[0], undefined);
         test.ok(result.date);
         delete result.date;
-        test.deepEqual(result, {'id': self.id, 'lat':25, 'long':26, 'text': 'Draco Dormiens Nunquam Titillandus', user_id: 99});
+        test.deepEqual(result, {'id': self.id, name:'user99', 'lat':25, 'long':26, 'text': 'Draco Dormiens Nunquam Titillandus', user_id: 99});
         test.done();
       });
     }
@@ -302,7 +302,7 @@ exports.test_mysql_helper = {
           test.equal(object.error, undefined);
           test.ok(object.data.date);
           delete object.data.date;
-          test.deepEqual(object.data, {'id': self.id, 'lat': 23, 'long': 8, 'text': 'Move fast and break things.', user_id: 99});
+          test.deepEqual(object.data, {'id': self.id, name: 'user99', 'lat': 23, 'long': 8, 'text': 'Move fast and break things.', user_id: 99});
           test.done();
         }
       };

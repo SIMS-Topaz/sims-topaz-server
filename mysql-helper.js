@@ -86,12 +86,12 @@ var doQuery = function(query, params, callback){
 
 // asks previews of all messages around position [lat, long]
 var getPreviews = function(lat, long, lat2, long2, callback){
-  var query = 'SELECT `messages`.`id`, LEFT(`messages`.`text`, :preview_size) AS `text`, '
-    + ' `messages`.`lat`, `messages`.`long`, `messages`.`date`, `messages`.`user_id`, `users`.`name`'
+  var query = 'SELECT `messages`.`id`, LEFT(`text`, :preview_size) AS `text`,'
+    + ' `lat`, `long`, `date`, `user_id`, `name`'
     + ' FROM '+message_table+' AS `messages`, '+user_table+' AS `users`'
     + ' WHERE `lat` BETWEEN :min_lat AND :max_lat AND `long` BETWEEN :min_long AND :max_long'
-    + ' AND `users`.`id` = `messages`.`user_id`'
-    + ' ORDER BY `id` DESC LIMIT 1000';
+    + ' AND `users`.`id` = `user_id`'
+    + ' ORDER BY `messages`.`id` DESC LIMIT 1000';
   var params = {};
   
   if(!long2){
@@ -120,9 +120,9 @@ var getPreviews = function(lat, long, lat2, long2, callback){
 
 // asks message with id 'id'
 var getMessage = function(id, callback){
-  var query = 'SELECT `id`, `text`, `lat`, `long`, `date`, `user_id`'
-   + ' FROM '+message_table
-   + ' WHERE `id`= :id';
+  var query = 'SELECT `messages`.`id`, `text`, `lat`, `long`, `date`, `user_id`, `name`'
+   + ' FROM '+message_table+' AS `messages`, '+user_table+' AS `users`'
+   + ' WHERE `messages`.`id`= :id';
   var params = {id: id};
   doQuery(query, params, function(error, results){
     callback(error, (error===null)?results[0]||null:null);
@@ -139,10 +139,9 @@ var postMessage = function(message, callback){
 
 // get comments related to 'message_id'
 var getComments = function(message_id, callback){
-  var query = 'SELECT `comments`.`id`, `comments`.`text`, `comments`.`date`, `comments`.`user_id`, '
-    + '`comments`.`message_id`, `users`.`name`'
+  var query = 'SELECT `comments`.`id`, `text`, `date`, `user_id`, `message_id`, `name`'
     + ' FROM '+comment_table+' AS `comments`, '+user_table+' AS `users`'
-    + ' WHERE `comments`.`message_id` = :message_id AND `users`.`id` = `comments`.`user_id`';
+    + ' WHERE `message_id` = :message_id AND `users`.`id` = `user_id`';
   var params = {message_id: message_id};
   doQuery(query, params, function(error, results){
     callback(error, results);
@@ -199,10 +198,9 @@ var postLikeStatus = function(likeStatus, callback){
       }
     }
     
-    queries += ' SELECT `messages`.`id`, `messages`.`text`, `messages`.`date`,'
-      + ' `messages`.`likes`, `messages`.`dislikes`, `users`.`name`'
+    queries += ' SELECT `messages`.`id`, `text`, `date`, `likes`, `dislikes`, `name`'
       + ' FROM '+message_table+' AS `messages`, '+user_table+' AS `users`'
-      + ' WHERE `messages`.`id` = :message_id AND `users`.`id` = `messages`.`user_id`; ';
+      + ' WHERE `messages`.`id` = :message_id AND `users`.`id` = `user_id`; ';
     doQuery(queries, likeStatus, function(error, results){
       if(error) console.log(error);
       callback(error, _.last(results)[0]);
