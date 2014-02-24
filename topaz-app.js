@@ -328,6 +328,66 @@ var post_like_status = function(req, res){
   }
 };
 
+var prepare_post_signup = exports.prepare_post_signup = function(req){
+  var user_name = req.body.user_name;
+  var user_password = req.body.user_password;
+  var user_email = req.body.user_email;
+  var version = req.body.version;
+  var rules = [{
+      rule: (user_name !== undefined),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Missing 'user_name' parameter"
+    },{
+      rule: (user_name !== undefined && user_name.length >= 4),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "'user_name' parameter too short"
+    },{
+      rule: (user_password !== undefined),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Missing 'user_password' parameter"
+    },{
+      rule: (user_password !== undefined && user_password.length >= 4),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "'user_password' parameter too short"
+    },{
+      rule: (user_email !== undefined),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Missing 'user_email' parameter"
+    }];
+
+  var error = handleError(rules);
+  return {'error': error, 'version': version, 'user_name': user_name, 'user_password': user_password, 'user_email': user_email};
+};
+
+var post_signup = exports.post_signup = function(req, res){
+  var prep = prepare_post_signup(req);
+
+  if(prep.error !== null){
+    res.json(prep.error);
+  }else{
+    mysql_helper.postSignup(prep.user_name, prep.user_password, prep.user_email, function(error, result){
+      if(error){
+        res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
+      }else{
+        if(result.insertId === -1){
+          if(result.nb_email > 0){
+            res.json(formatError(409, 'SIGNUP_ERR', 'Email already in use'));
+          }else{
+            res.json(formatError(409, 'SIGNUP_ERR', 'User name already in use'));
+          }
+        }else{
+          res.json(formatResponse(prep.version, 201, 'Created', {'user_id': result.insertId, 'user_name': prep.user_name}));
+        }
+      }
+    });
+  }
+};
+
 var handleError = function(rules){
   var result = null;
 

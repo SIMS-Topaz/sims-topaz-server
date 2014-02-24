@@ -30,6 +30,7 @@ app.use(express.json())
 .post('/api/:version/post_comment', topaz.post_comment)
 .get('/api/:version/user_auth', topaz.get_user_auth)
 .post('/api/:version/user_auth', topaz.post_user_auth)
+.post('/api/:version/signup', topaz.post_signup)
 .listen(conf.node.port);
 
 console.log('topaz-server running at ' + conf.node.url + ':' + conf.node.port);

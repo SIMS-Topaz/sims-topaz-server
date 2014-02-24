@@ -16,7 +16,7 @@ exports.mysql =
   user     : '',
   password : '',
   database : '',
-  multipleStatements: 
+  multipleStatements: true
 };
 
 // date format used in MySQL

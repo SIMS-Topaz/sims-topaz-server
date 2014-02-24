@@ -1,4 +1,7 @@
+var crypto = require('crypto');
+
 var should = require("should");
+
 var topaz = require('../topaz-app.js');
 var mysql_helper = require('../mysql-helper.js');
 var conf = require('../conf.js');
@@ -105,4 +108,26 @@ describe('mysql-helper.js', function(){
       });
     });
   });
+
+  describe('postSignup', function(){
+    it('should insert a new user in the database', function(done){
+      var name = 'sarah_lance', pass = 'tommy', email = 'sarah.lance@staronline.com';
+      var user = {'name': name, 'password': pass, 'email': email};
+      mysql_helper.postSignup(name, pass, email, function(error, result){
+        (error === null).should.be.true;
+        mysql_helper.doQuery('SELECT * FROM `test_users` WHERE id=:id', {'id': result.insertId}, function(error, actual){
+          actual.length.should.be.above(0);
+          actual = actual[0];
+          user.id = result.insertId;
+          var shasum = crypto.createHash('sha1').update(actual.salt+pass);
+          var hpass = shasum.digest('hex');
+          user.password = hpass;
+          user.salt = actual.salt;
+          actual.should.eql(user);
+          done();
+        });
+      });
+    });
+  });
+
 });
