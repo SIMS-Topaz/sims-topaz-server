@@ -14,7 +14,7 @@ var user_table = (process.env.NODE_ENV==='test')?'test_users':'users';
 var vote_table = (process.env.NODE_ENV==='test')?'test_votes':'votes';
 
 /*=========================== CONNECTION ===========================*/
-var openConnection = function(){
+var openConnection = exports.openConnection = function(){
   client = mysql.createConnection(conf.mysql);
   
   client.config.queryFormat = function (query, values){
@@ -41,13 +41,13 @@ var openConnection = function(){
   });
 };
 
-var closeConnection = function(){
+var closeConnection = exports.closeConnection = function(){
   client.end(function(error){
     if(error) console.error('ERROR mysql-helper.closeConnection: ' + error);
   });
 };
 
-var handleDisconnect = function(){
+var handleDisconnect = exports.handleDisconnect = function(){
   // Recreate the connection, since the old one cannot be reused.
   client = mysql.createConnection(conf.mysql);
 
@@ -79,16 +79,16 @@ var handleDisconnect = function(){
 
 /*=========================== DATA ===========================*/
 // does request 'query' and call 'callback' with the query's result
-var doQuery = function(query, params, callback){
+var doQuery = exports.doQuery = function(query, params, callback){
   client.query(query, params, function(error, results){
     callback(error, results);
   });
 };
 
 // asks previews of all messages around position [lat, long]
-var getPreviews = function(lat, long, lat2, long2, callback){
+var getPreviews = exports.getPreviews = function(lat, long, lat2, long2, callback){
   var query = 'SELECT `messages`.`id`, LEFT(`text`, :preview_size) AS `text`,'
-    + ' `lat`, `long`, `date`, `user_id`, `name` AS `user_name`'
+    + ' `lat`, `long`, `date`, `user_id`, `name` AS `user_name`, `likes`, `dislikes`'
     + ' FROM '+message_table+' AS `messages`, '+user_table+' AS `users`'
     + ' WHERE `lat` BETWEEN :min_lat AND :max_lat AND `long` BETWEEN :min_long AND :max_long'
     + ' AND `users`.`id` = `user_id`'
@@ -105,18 +105,23 @@ var getPreviews = function(lat, long, lat2, long2, callback){
 };
 
 // asks message with id 'id'
-var getMessage = function(id, callback){
-  var query = 'SELECT `messages`.`id`, `text`, `lat`, `long`, `date`, `user_id`, `name` AS `user_name`'
-   + ' FROM '+message_table+' AS `messages` LEFT JOIN '+user_table+' AS `users` ON `users`.`id`=`messages`.`user_id`'
-   + ' WHERE `messages`.`id`= :id';
-  var params = {id: id};
+var getMessage = exports.getMessage = function(id, user_id, callback){
+  var query = 'SELECT `messages`.`id`, `text`, `lat`, `long`, `date`, `user_id`, `name` AS `user_name`, '
+    + '`likes`, `dislikes`'
+    + ' FROM '+message_table+' AS `messages` LEFT JOIN '+user_table+' AS `users` ON `users`.`id`=`messages`.`user_id`'
+    + ' WHERE `messages`.`id`= :id; ';
+  query += 'SELECT `vote` AS `likeStatus` FROM ' + vote_table
+    + ' WHERE `message_id` = :id AND `user_id` = :user_id';
+  var params = {id: id, user_id: user_id};
   doQuery(query, params, function(error, results){
-    callback(error, (error===null)?results[0]||null:null);
+    results = _.flatten(results);
+    results = (error===null) ? _.extend(results[0], results[1]) || null : null;
+    callback(error, results);
   });
 };
 
 // inserts new message in DB
-var postMessage = function(message, callback){
+var postMessage = exports.postMessage = function(message, callback){
   message.date = new Date().getTime();
   var query = 'INSERT INTO '+message_table+' (`text`, `lat`, `long`, `date`, `user_id`)'
     + ' VALUES (:text, :lat, :long, :date, :user_id); ';
@@ -128,7 +133,7 @@ var postMessage = function(message, callback){
 };
 
 // get comments related to 'message_id'
-var getComments = function(message_id, callback){
+var getComments = exports.getComments = function(message_id, callback){
   var query = 'SELECT `comments`.`id`, `text`, `date`, `user_id`, `message_id`, `name` AS `user_name`'
     + ' FROM '+comment_table+' AS `comments`, '+user_table+' AS `users`'
     + ' WHERE `message_id` = :message_id AND `users`.`id` = `user_id`';
@@ -139,7 +144,7 @@ var getComments = function(message_id, callback){
 };
 
 // inserts new comment
-var postComment = function(comment, callback){
+var postComment = exports.postComment = function(comment, callback){
   comment.date = new Date().getTime();
   var query = 'INSERT INTO ' + comment_table + ' (`text`, `date`, `message_id`, `user_id`)'
     + ' VALUES (:text, :date, :message_id, :user_id)';
@@ -151,7 +156,7 @@ var postComment = function(comment, callback){
  * @param {function} callback
  * @returns {object} {id, text, date, likes, dislikes, name}
  */
-var postLikeStatus = function(likeStatus, callback){
+var postLikeStatus = exports.postLikeStatus = function(likeStatus, callback){
   var query_vote = 'SELECT `vote` FROM ' + vote_table
     + ' WHERE `message_id` = :message_id AND `user_id` = :user_id';
   doQuery(query_vote, likeStatus, function(error_vote, result){
@@ -163,14 +168,14 @@ var postLikeStatus = function(likeStatus, callback){
     if(previous_vote != likeStatus.likeStatus){
       if(!previous_vote){
         var vote = (likeStatus.likeStatus == 'LIKED') ? '`likes`' : '`dislikes`';
-        queries = 'UPDATE '+message_table+' SET '+vote+' = '+vote+' + 1 WHERE `id` = :message_id; '
-          + 'INSERT INTO '+vote_table+' (`user_id`, `message_id`, `vote`)'
+        queries = 'UPDATE '+message_table+' SET '+vote+' = '+vote+' + 1 WHERE `id` = :message_id; ';
+        queries += 'INSERT INTO '+vote_table+' (`user_id`, `message_id`, `vote`)'
           + ' VALUES (:user_id, :message_id, :likeStatus); ';
       }else if(previous_vote == 'LIKED'){
         if(likeStatus.likeStatus == 'DISLIKED'){
           queries = 'UPDATE '+vote_table+' SET `vote` = :likeStatus'
-            + ' WHERE `message_id` = :message_id AND `user_id` = :user_id; '
-            + 'UPDATE '+message_table+' SET `dislikes` = `dislikes` + 1, '
+            + ' WHERE `message_id` = :message_id AND `user_id` = :user_id; ';
+          queries += 'UPDATE '+message_table+' SET `dislikes` = `dislikes` + 1, '
             + '`likes` = `likes` - 1 WHERE `id` = :message_id; ';
         }else if(likeStatus.likeStatus == 'NONE'){
           queries = 'DELETE FROM '+vote_table+' WHERE `message_id` = :message_id AND `user_id` = :user_id; '
@@ -179,12 +184,12 @@ var postLikeStatus = function(likeStatus, callback){
       }else if(previous_vote == 'DISLIKED'){
         if(likeStatus.likeStatus == 'LIKED'){
           queries = 'UPDATE '+vote_table+' SET `vote` = :likeStatus'
-            + ' WHERE `message_id` = :message_id AND `user_id` = :user_id; '
-            + 'UPDATE '+message_table+' SET `likes` = `likes` + 1, '
+            + ' WHERE `message_id` = :message_id AND `user_id` = :user_id; ';
+          queries += 'UPDATE '+message_table+' SET `likes` = `likes` + 1, '
             + '`dislikes` = `dislikes` - 1 WHERE `id` = :message_id; '; 
         }else if(likeStatus.likeStatus == 'NONE'){
-          queries = 'DELETE FROM '+vote_table+ ' WHERE `message_id` = :message_id AND `user_id` = :user_id; '
-            + ' UPDATE '+message_table+' SET `dislikes` = `dislikes` - 1 WHERE `id` = :message_id; ';
+          queries = 'DELETE FROM '+vote_table+ ' WHERE `message_id` = :message_id AND `user_id` = :user_id; ';
+          queries += ' UPDATE '+message_table+' SET `dislikes` = `dislikes` - 1 WHERE `id` = :message_id; ';
         }
       }
     }
@@ -203,7 +208,7 @@ var postLikeStatus = function(likeStatus, callback){
 
 // removes a row
 //TODO: upgrade it to be useful
-var removeData = function(id){
+var removeData = exports.removeData = function(id){
   client.query('DELETE FROM '+message_table+' WHERE `id` = :id', {id: id}, function(error){
     if(error){
       console.error('ERROR mysql-helper.removeData:' + error);
@@ -211,7 +216,7 @@ var removeData = function(id){
   });
 };
 
-var getUser = function(username, callback){
+var getUser = exports.getUser = function(username, callback){
   var query = 'SELECT `id`, `name`, `salt`, `password` FROM `'+user_table+'` WHERE `name`=:username';
   var params = {'username': username};
   doQuery(query, params, function(error, results){
@@ -245,16 +250,3 @@ var postSignup = exports.postSignup = function(user_name, user_password, user_em
     }
   });
 };
-
-exports.doQuery          = doQuery;
-exports.openConnection   = openConnection;
-exports.closeConnection  = closeConnection;
-exports.handleDisconnect = handleDisconnect;
-exports.getPreviews      = getPreviews;
-exports.getMessage       = getMessage;
-exports.postMessage      = postMessage;
-exports.getComments      = getComments;
-exports.postComment      = postComment;
-exports.postLikeStatus   = postLikeStatus;
-exports.removeData       = removeData;
-exports.getUser	         = getUser;
