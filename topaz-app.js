@@ -121,14 +121,12 @@ var get_message = exports.get_message = function(req, res){
           console.error(error);
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
-          console.dir(message);
           if(prep.with_comments == 'WITH_COMMENTS'){
             mysql_helper.getComments(prep.id, function(err, comments){
               if(err){
                 console.error(err);
                 res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
               }else{
-                console.dir(comments);
                 message.comments = comments;
                 res.json(formatResponse(prep.version, 200, 'OK', message));
               }
