@@ -2,12 +2,18 @@
 topaz-server:
 service REST + websocket (maybe)
 **************************************************************************/
-var conf    = require('./conf.js');
+var http    = require('http');
+var https   = require('https');
+var fs   = require('fs');
+
 var _       = require('underscore');
 var express = require('express');
-var app     = express();
+
+var conf    = require('./conf.js');
 var topaz   = require('./topaz-app.js');
 var mysql_helper = require('./mysql-helper.js');
+
+var app     = express();
 var RedisStore = require('connect-redis')(express);
 
 mysql_helper.openConnection();
@@ -32,6 +38,20 @@ app.use(express.json())
 .get('/api/:version/user_auth', topaz.get_user_auth)
 .post('/api/:version/user_auth', topaz.post_user_auth)
 .post('/api/:version/signup', topaz.post_signup)
-.listen(conf.node.port);
 
-console.log('topaz-server running at ' + conf.node.url + ':' + conf.node.port);
+http.createServer(app).listen(conf.node.http_port);
+
+var error, cred;
+try{
+  cred = {
+    key: fs.readFileSync('sslcert/key.pem', 'utf8'),
+    cert: fs.readFileSync('sslcert/cert.pem', 'utf8')
+  };
+}catch(err){
+  error = err;
+}finally{
+  if(!error)
+    https.createServer(cred, app).listen(conf.node.https_port);
+  console.log('topaz-server running at '+conf.node.url+':'+conf.node.http_port+' (HTTP)'+(!error?'/'+conf.node.https_port+' (HTTPS)':''));
+}
+
