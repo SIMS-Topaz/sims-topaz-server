@@ -172,8 +172,8 @@ var post_message = exports.post_message = function(req, res){
           console.error(error);
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
-          message['id'] = result.insertId;
-          res.json(formatResponse(prep.version, 201, 'Created', message));
+          prep.message['id'] = result.insertId;
+          res.json(formatResponse(prep.version, 201, 'Created', prep.message));
         }
       });
     }
