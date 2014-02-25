@@ -183,7 +183,7 @@ var postLikeStatus = function(likeStatus, callback){
       }
     }
     
-    queries += ' SELECT `messages`.`id`, `text`, `date`, `likes`, `dislikes`, `name`'
+    queries += ' SELECT `messages`.`id`, `text`, `date`, `likes`, `dislikes`, `name` AS `user_name`'
       + ' FROM '+message_table+' AS `messages`, '+user_table+' AS `users`'
       + ' WHERE `messages`.`id` = :message_id AND `users`.`id` = `user_id`; ';
     doQuery(queries, likeStatus, function(error, results){
