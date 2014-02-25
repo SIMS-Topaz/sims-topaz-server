@@ -32,8 +32,8 @@ CREATE TABLE `topaz`.`test_users` LIKE `topaz`.`users`;
 
 CREATE TABLE `topaz`.`votes` (
   `user_id` BIGINT NOT NULL,
-  `comment_id` BIGINT NOT NULL,
+  `message_id` BIGINT NOT NULL,
   `vote` VARCHAR(4) NOT NULL,
-  PRIMARY KEY (`user_id`, `comment_id`)
+  PRIMARY KEY (`user_id`, `message_id`)
 );
 CREATE TABLE `topaz`.`test_votes` LIKE `topaz`.`votes`;
