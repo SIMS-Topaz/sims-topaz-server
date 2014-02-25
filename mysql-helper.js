@@ -155,10 +155,11 @@ var postLikeStatus = function(likeStatus, callback){
   var query_vote = 'SELECT `vote` FROM ' + vote_table
     + ' WHERE `message_id` = :message_id AND `user_id` = :user_id';
   doQuery(query_vote, likeStatus, function(error_vote, result){
-    var previous_vote = result[0] || null;
-    previous_vote = (_.isObject(previous_vote)) ? previous_vote.vote : null;
-    if(error_vote) console.log(error_vote);
+    var previous_vote = (_.isArray(result) && _.isObject(result[0])) ? result[0].vote : null;
+    console.log(previous_vote);
     var queries = '';
+
+    if(error_vote) console.log(error_vote);
     
     if(previous_vote != likeStatus.likeStatus){
       if(!previous_vote){
