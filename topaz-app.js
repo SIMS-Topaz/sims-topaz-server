@@ -89,6 +89,7 @@ var get_previews = exports.get_previews = function(req, res){
 
 var prepare_get_message = exports.prepare_get_message = function(req){
   var id = req.params.id;
+  var user_id = req.session.user_id;
   var with_comments = req.params.with_comments;
 
   var rules = [
@@ -105,7 +106,8 @@ var prepare_get_message = exports.prepare_get_message = function(req){
     }];
 
   var error = handleError(rules);
-  return {'error': error, 'version': req.params.version, 'id': id, with_comments: with_comments};
+  return {'error': error, 'version': req.params.version,
+    'id': id, user_id: user_id, with_comments: with_comments};
 };
 
 var get_message = exports.get_message = function(req, res){
@@ -116,7 +118,7 @@ var get_message = exports.get_message = function(req, res){
     if(prep.error !== null){
       res.json(prep.error);
     }else{
-      mysql_helper.getMessage(prep.id, function (error, message){
+      mysql_helper.getMessage(prep.id, prep.user_id, function (error, message){
         if(error){
           console.error(error);
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
@@ -440,4 +442,3 @@ var formatResponse = exports.formatResponse = function(version, success_code, su
 var formatError = exports.formatError = function(error_code, error_msg, error_details){
   return {'error': {'code': error_code, 'msg': error_msg, 'details': error_details}};
 };
-

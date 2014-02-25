@@ -37,7 +37,7 @@ app.use(express.json())
 .post('/api/:version/post_like_status', topaz.post_like_status)
 .get('/api/:version/user_auth', topaz.get_user_auth)
 .post('/api/:version/user_auth', topaz.post_user_auth)
-.post('/api/:version/signup', topaz.post_signup)
+.post('/api/:version/signup', topaz.post_signup);
 
 http.createServer(app).listen(conf.node.http_port);
 
@@ -54,4 +54,3 @@ try{
     https.createServer(cred, app).listen(conf.node.https_port);
   console.log('topaz-server running at '+conf.node.url+':'+conf.node.http_port+' (HTTP)'+(!error?'/'+conf.node.https_port+' (HTTPS)':''));
 }
-
