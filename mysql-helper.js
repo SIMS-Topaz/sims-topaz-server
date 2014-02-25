@@ -119,8 +119,12 @@ var getMessage = function(id, callback){
 var postMessage = function(message, callback){
   message.date = new Date().getTime();
   var query = 'INSERT INTO '+message_table+' (`text`, `lat`, `long`, `date`, `user_id`)'
-    + ' VALUES (:text, :lat, :long, :date, :user_id)';
-  doQuery(query, message, callback);
+    + ' VALUES (:text, :lat, :long, :date, :user_id); ';
+  query += 'SELECT `name` AS `user_name` FROM '+user_table+' WHERE `id` = :user_id; ';
+  doQuery(query, message, function(error, results){
+    results = _.flatten(results);
+    callback(error, _.extend(results[0], results[1]));
+  });
 };
 
 // get comments related to 'message_id'
@@ -156,39 +160,42 @@ var postLikeStatus = function(likeStatus, callback){
     if(error_vote) console.log(error_vote);
     var queries = '';
     
-    if(!previous_vote){
-      var vote = (likeStatus.likeStatus == 'LIKED') ? '`likes`' : '`dislikes`';
-      queries = 'UPDATE '+message_table+' SET '+vote+' = '+vote+' + 1 WHERE `id` = :message_id; '
-        + 'INSERT INTO '+vote_table+' (`user_id`, `message_id`, `vote`)'
-        + ' VALUES (:user_id, :message_id, :likeStatus); ';
-    }else if(previous_vote == 'LIKED'){
-      if(likeStatus.likeStatus == 'DISLIKED'){
-        queries = 'UPDATE '+vote_table+' SET `vote` = :likeStatus'
-          + ' WHERE `message_id` = :message_id AND `user_id` = :user_id; '
-          + 'UPDATE '+message_table+' SET `dislikes` = `dislikes` + 1, '
-          + '`likes` = `likes` - 1 WHERE `id` = :message_id; ';
-      }else if(likeStatus.likeStatus == 'NONE'){
-        queries = 'DELETE FROM '+vote_table+' WHERE `message_id` = :message_id AND `user_id` = :user_id; '
-          + 'UPDATE '+message_table+' SET `likes` = `likes` - 1 WHERE `id` = :message_id; ';
-      }
-    }else if(previous_vote == 'DISLIKED'){
-      if(likeStatus.likeStatus == 'LIKED'){
-        queries = 'UPDATE '+vote_table+' SET `vote` = :likeStatus'
-          + ' WHERE `message_id` = :message_id AND `user_id` = :user_id; '
-          + 'UPDATE '+message_table+' SET `likes` = `likes` + 1, '
-          + '`dislikes` = `dislikes` - 1 WHERE `id` = :message_id; '; 
-      }else if(likeStatus.likeStatus == 'NONE'){
-        queries = 'DELETE FROM '+vote_table+ ' WHERE `message_id` = :message_id AND `user_id` = :user_id; '
-          + ' UPDATE '+message_table+' SET `dislikes` = `dislikes` - 1 WHERE `id` = :message_id; ';
+    if(previous_vote != likeStatus.likeStatus){
+      if(!previous_vote){
+        var vote = (likeStatus.likeStatus == 'LIKED') ? '`likes`' : '`dislikes`';
+        queries = 'UPDATE '+message_table+' SET '+vote+' = '+vote+' + 1 WHERE `id` = :message_id; '
+          + 'INSERT INTO '+vote_table+' (`user_id`, `message_id`, `vote`)'
+          + ' VALUES (:user_id, :message_id, :likeStatus); ';
+      }else if(previous_vote == 'LIKED'){
+        if(likeStatus.likeStatus == 'DISLIKED'){
+          queries = 'UPDATE '+vote_table+' SET `vote` = :likeStatus'
+            + ' WHERE `message_id` = :message_id AND `user_id` = :user_id; '
+            + 'UPDATE '+message_table+' SET `dislikes` = `dislikes` + 1, '
+            + '`likes` = `likes` - 1 WHERE `id` = :message_id; ';
+        }else if(likeStatus.likeStatus == 'NONE'){
+          queries = 'DELETE FROM '+vote_table+' WHERE `message_id` = :message_id AND `user_id` = :user_id; '
+            + 'UPDATE '+message_table+' SET `likes` = `likes` - 1 WHERE `id` = :message_id; ';
+        }
+      }else if(previous_vote == 'DISLIKED'){
+        if(likeStatus.likeStatus == 'LIKED'){
+          queries = 'UPDATE '+vote_table+' SET `vote` = :likeStatus'
+            + ' WHERE `message_id` = :message_id AND `user_id` = :user_id; '
+            + 'UPDATE '+message_table+' SET `likes` = `likes` + 1, '
+            + '`dislikes` = `dislikes` - 1 WHERE `id` = :message_id; '; 
+        }else if(likeStatus.likeStatus == 'NONE'){
+          queries = 'DELETE FROM '+vote_table+ ' WHERE `message_id` = :message_id AND `user_id` = :user_id; '
+            + ' UPDATE '+message_table+' SET `dislikes` = `dislikes` - 1 WHERE `id` = :message_id; ';
+        }
       }
     }
-    
     queries += ' SELECT `messages`.`id`, `text`, `date`, `likes`, `dislikes`, `name` AS `user_name`'
       + ' FROM '+message_table+' AS `messages`, '+user_table+' AS `users`'
       + ' WHERE `messages`.`id` = :message_id AND `users`.`id` = `user_id`; ';
     doQuery(queries, likeStatus, function(error, results){
       if(error) console.log(error);
-      callback(error, _.last(results)[0]);
+      var result = _.last(results);
+      var final_result = (_.isArray(result)) ? result[0] : result;
+      callback(error, final_result);
     });
   });
 };

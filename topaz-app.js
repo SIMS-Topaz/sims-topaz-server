@@ -191,6 +191,7 @@ var post_message = exports.post_message = function(req, res){
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
           prep.message['id'] = result.insertId;
+          prep.message['user_name'] = result.user_name;
           res.json(formatResponse(prep.version, 201, 'Created', prep.message));
         }
       });
@@ -347,13 +348,12 @@ var post_like_status = exports.post_like_status = function(req, res){
     var prep = prepare_post_like_status(req);
     if(prep.error !== null) res.json(prep.error);
     else{
-      mysql_helper.postLikeStatus(prep.likeStatus, function(error, results){
+      mysql_helper.postLikeStatus(prep.likeStatus, function(error, message){
         if(error){
           console.error(error);
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
-          var result = _.last(results);
-          res.json(formatResponse(prep.version, 201, 'Created', result));
+          res.json(formatResponse(prep.version, 201, 'Created', message));
         }
       });
     }
