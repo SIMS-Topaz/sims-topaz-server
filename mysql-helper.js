@@ -115,6 +115,7 @@ var getMessage = exports.getMessage = function(id, user_id, callback){
   var params = {id: id, user_id: user_id};
   doQuery(query, params, function(error, results){
     results = _.flatten(results);
+    results[1].likeStatus = results[1].likeStatus || 'NONE';
     results = (error===null) ? _.extend(results[0], results[1]) || null : null;
     callback(error, results);
   });
