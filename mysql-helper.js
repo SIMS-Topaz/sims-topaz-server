@@ -93,28 +93,13 @@ var getPreviews = function(lat, long, lat2, long2, callback){
     + ' WHERE `lat` BETWEEN :min_lat AND :max_lat AND `long` BETWEEN :min_long AND :max_long'
     + ' AND `users`.`id` = `user_id`'
     + ' ORDER BY `messages`.`id` DESC LIMIT 1000';
-  var params = {};
-  
-  if(!long2){
-    //getPreviews v1
-    var radius = lat2;
-    params = {
-      preview_size : conf.PREVIEW_SIZE,
-      min_lat      : lat-radius,
-      max_lat      : lat+radius,
-      min_long     : long-radius,
-      max_long     : long+radius
-    };
-  }else{
-    //getPreviews v1.1
-    params = {
-      preview_size : conf.PREVIEW_SIZE,
-      min_lat      : lat,
-      max_lat      : lat2,
-      min_long     : long,
-      max_long     : long2
-    };
-  }
+  var params = {
+    preview_size : conf.PREVIEW_SIZE,
+    min_lat      : lat,
+    max_lat      : lat2,
+    min_long     : long,
+    max_long     : long2
+  };
   
   doQuery(query, params, callback);
 };

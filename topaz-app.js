@@ -89,17 +89,23 @@ var get_previews = exports.get_previews = function(req, res){
 
 var prepare_get_message = exports.prepare_get_message = function(req){
   var id = req.params.id;
-  var version = req.params.version;
+  var with_comments = req.params.with_comments;
 
-  var rules = [{
+  var rules = [
+    {
       rule: (id !== undefined),
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'id' parameter"
+    },{
+      rule: (with_comments === undefined || with_comments == 'MSG' || with_comments == 'WITH_COMMENTS'),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Invalid 'with_comments' parameter"
     }];
 
   var error = handleError(rules);
-  return {'error': error, 'version': version, 'id': id};
+  return {'error': error, 'version': req.params.version, 'id': id, with_comments: with_comments};
 };
 
 var get_message = exports.get_message = function(req, res){
@@ -110,12 +116,26 @@ var get_message = exports.get_message = function(req, res){
     if(prep.error !== null){
       res.json(prep.error);
     }else{
-      mysql_helper.getMessage(prep.id, function (error, result){
+      mysql_helper.getMessage(prep.id, function (error, message){
         if(error){
           console.error(error);
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
-          res.json(formatResponse(prep.version, 200, 'OK', result));
+          console.dir(message);
+          if(prep.with_comments == 'WITH_COMMENTS'){
+            mysql_helper.getComments(prep.id, function(err, comments){
+              if(err){
+                console.error(err);
+                res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
+              }else{
+                console.dir(comments);
+                message.comments = comments;
+                res.json(formatResponse(prep.version, 200, 'OK', message));
+              }
+            });
+          }else{
+            res.json(formatResponse(prep.version, 200, 'OK', message));
+          }
         }
       });
     }
@@ -225,11 +245,6 @@ var prepare_post_comment = prepare_post_comment = function(req){
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'message_id' parameter"
-    },{
-      rule: (_.isString(comment.user)),
-      code: 400,
-      msg: 'PARAM_ERR',
-      details: "Missing 'user' parameter"
     },{
       rule: (_.isString(comment.text)),
       code: 400,
