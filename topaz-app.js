@@ -376,9 +376,9 @@ var post_signup = exports.post_signup = function(req, res){
       }else{
         if(result.insertId === -1){
           if(result.nb_email > 0){
-            res.json(formatError(409, 'SIGNUP_ERR', 'Email already in use'));
+            res.json(formatError(409, 'EMAIL_ERR', 'Email already in use'));
           }else{
-            res.json(formatError(409, 'SIGNUP_ERR', 'User name already in use'));
+            res.json(formatError(409, 'USERNAME_ERR', 'User name already in use'));
           }
         }else{
           res.json(formatResponse(prep.version, 201, 'Created', {'user_id': result.insertId, 'user_name': prep.user_name}));
