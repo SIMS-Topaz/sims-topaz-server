@@ -217,7 +217,7 @@ var get_comments = exports.get_comments = function(req, res){
 var prepare_post_comment = prepare_post_comment = function(req){
   var comment = req.body;
   comment.user_id = req.session.user_id;
-  var message = req.params.id;
+  comment.message_id = req.params.message_id;
 
   var rules = [
     {
