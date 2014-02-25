@@ -152,7 +152,6 @@ var getComments = function(message_id, callback){
 // inserts new comment
 var postComment = function(comment, callback){
   comment.date = new Date().getTime();
-  comment.user_id = 1;
   var query = 'INSERT INTO ' + comment_table + ' (`text`, `date`, `message_id`, `user_id`)'
     + ' VALUES (:text, :date, :message_id, :user_id)';
   doQuery(query, comment, callback);

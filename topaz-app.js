@@ -3,11 +3,11 @@ var conf  = require('./conf.js');
 var _ = require ('underscore');
 var crypto = require('crypto');
 
-var get_index = function(req, res){
+var get_index = exports.get_index = function(req, res){
   res.send('Topaz Server Working!');
 };
 
-var prepare_get_previews = function(req){
+var prepare_get_previews = exports.prepare_get_previews = function(req){
   var version = req.params.version;
   var lat1 = req.params.lat1;
   var lat2 = req.params.lat2;
@@ -67,23 +67,27 @@ var prepare_get_previews = function(req){
   return {'error': error, 'version': version, 'lat1': lat1, 'long1': long1, 'lat2': lat2, 'long2': long2};
 };
 
-var get_previews = function(req, res){
-  var prep = prepare_get_previews(req);
-  if(prep.error !== null){
-    res.json(prep.error);
+var get_previews = exports.get_previews = function(req, res){
+  if(!req.session.user_id){
+    res.json(formatError(401, 'NOT_AUTH_ERR', 'User not authenticated'));
   }else{
-    mysql_helper.getPreviews(prep.lat1, prep.long1, prep.lat2, prep.long2, function (error, results) {
-      if(error){
-        console.error(error);
-        res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
-      }else{
-        res.json(formatResponse(prep.version, 200, 'OK', results));
-      }
-    });
+    var prep = prepare_get_previews(req);
+    if(prep.error !== null){
+      res.json(prep.error);
+    }else{
+      mysql_helper.getPreviews(prep.lat1, prep.long1, prep.lat2, prep.long2, function (error, results) {
+        if(error){
+          console.error(error);
+          res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
+        }else{
+          res.json(formatResponse(prep.version, 200, 'OK', results));
+        }
+      });
+    }
   }
 };
 
-var prepare_get_message = function(req){
+var prepare_get_message = exports.prepare_get_message = function(req){
   var id = req.params.id;
   var version = req.params.version;
 
@@ -98,25 +102,30 @@ var prepare_get_message = function(req){
   return {'error': error, 'version': version, 'id': id};
 };
 
-var get_message = function(req, res){
-  var prep = prepare_get_message(req);
-  if(prep.error !== null){
-    res.json(prep.error);
+var get_message = exports.get_message = function(req, res){
+  if(!req.session.user_id){
+    res.json(formatError(401, 'NOT_AUTH_ERR', 'User not authenticated'));
   }else{
-    mysql_helper.getMessage(prep.id, function (error, result){
-      if(error){
-        console.error(error);
-        res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
-      }else{
-        res.json(formatResponse(prep.version, 200, 'OK', result));
-      }
-    });
+    var prep = prepare_get_message(req);
+    if(prep.error !== null){
+      res.json(prep.error);
+    }else{
+      mysql_helper.getMessage(prep.id, function (error, result){
+        if(error){
+          console.error(error);
+          res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
+        }else{
+          res.json(formatResponse(prep.version, 200, 'OK', result));
+        }
+      });
+    }
   }
 };
 
-var prepare_post_message = function(req){
+var prepare_post_message = exports.prepare_post_message = function(req){
   // curl -X POST -H "Content-Type:application/json" -H "Accept:application/json" http://localhost:8080/api/v1.1/post_message -d '{"lat":12,"long":12,"text":"Hello World"}'
   var message = req.body;
+  message.user_id = req.session.user_id;
   var version = req.params.version;
   var rules = [
     {
@@ -150,26 +159,28 @@ var prepare_post_message = function(req){
   return {'error': error, 'version': version, 'message': message};
 };
 
-var post_message = function(req, res){
-  var prep = prepare_post_message(req);
-  var message = prep.message;
-  message.user_id = req.session.user_id;
-  if(prep.error !== null){
-    res.json(prep.error);
+var post_message = exports.post_message = function(req, res){
+  if(!req.session.user_id){
+    res.json(formatError(401, 'NOT_AUTH_ERR', 'User not authenticated'));
   }else{
-    mysql_helper.postMessage(message, function (error, result){
-      if(error){
-        console.error(error);
-        res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
-      }else{
-        message['id'] = result.insertId;
-        res.json(formatResponse(prep.version, 201, 'Created', message));
-      }
-    });
+    var prep = prepare_post_message(req);
+    if(prep.error !== null){
+      res.json(prep.error);
+    }else{
+      mysql_helper.postMessage(prep.message, function (error, result){
+        if(error){
+          console.error(error);
+          res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
+        }else{
+          message['id'] = result.insertId;
+          res.json(formatResponse(prep.version, 201, 'Created', message));
+        }
+      });
+    }
   }
 };
 
-var prepare_get_comments = function(req){
+var prepare_get_comments = exports.prepare_get_comments = function(req){
   var message_id = req.params.message_id;
 
   var rules = [{
@@ -183,24 +194,30 @@ var prepare_get_comments = function(req){
   return {error: error, version: req.params.version, message_id: message_id};
 };
 
-var get_comments = function(req, res){
-  var prep = prepare_get_comments(req);
-  if(prep.error !== null){
-    res.json(prep.error);
+var get_comments = exports.get_comments = function(req, res){
+  if(!req.session.user_id){
+    res.json(formatError(401, 'NOT_AUTH_ERR', 'User not authenticated'));
   }else{
-    mysql_helper.getComments(prep.message_id, function(error, results){
-      if(error){
-        console.error(error);
-        res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
-      }else{
-        res.json(formatResponse(prep.version, 200, 'OK', results));
-      }
-    });
+    var prep = prepare_get_comments(req);
+    if(prep.error !== null){
+      res.json(prep.error);
+    }else{
+      mysql_helper.getComments(prep.message_id, function(error, results){
+        if(error){
+          console.error(error);
+          res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
+        }else{
+          res.json(formatResponse(prep.version, 200, 'OK', results));
+        }
+      });
+    }
   }
 };
 
-var prepare_post_comment = function(req){
+var prepare_post_comment = prepare_post_comment = function(req){
   var comment = req.body;
+  comment.user_id = req.session.user_id;
+  var message = req.params.id;
 
   var rules = [
     {
@@ -224,25 +241,29 @@ var prepare_post_comment = function(req){
   return {error: error, version: req.params.version, comment: comment};
 };
 
-var post_comment = function(req, res){
-  var prep = prepare_post_comment(req);
-  
-  if(prep.error !== null) res.json(prep.error);
-  else{
-    mysql_helper.postComment(prep.comment, function(error, result){
-      if(error){
-        console.error(error);
-        res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
-      }else{
-        prep.comment['id'] = result.insertId;
-        res.json(formatResponse(prep.version, 201, 'Created', prep.comment));
-      }
-    });
+var post_comment = exports.post_comment = function(req, res){
+  if(!req.session.user_id){
+    res.json(formatError(401, 'NOT_AUTH_ERR', 'User not authenticated'));
+  }else{
+    var prep = prepare_post_comment(req);
+ 
+    if(prep.error !== null) res.json(prep.error);
+    else{
+      mysql_helper.postComment(prep.comment, function(error, result){
+        if(error){
+          console.error(error);
+          res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
+        }else{
+          prep.comment['id'] = result.insertId;
+          res.json(formatResponse(prep.version, 201, 'Created', prep.comment));
+        }
+      });
+    }
   }
 };
 
-var get_user_auth = function(req, res){
-  if(req.session.user_name !== undefined && req.session.user_id !== undefined){
+var get_user_auth = exports.get_user_auth = function(req, res){
+  if(req.session.user_id !== undefined){
     res.json({'success': {'code': 200, 'msg': 'OK'},
       'data': {'user_name': req.session.user_name, 'user_id': req.session.user_id}});
   }else{
@@ -250,7 +271,7 @@ var get_user_auth = function(req, res){
   }
 };
 
-var post_user_auth = function(req, res){
+var post_user_auth = exports.post_user_auth = function(req, res){
   if(req.session.user_name !== undefined || req.session.user_id !== undefined){
     res.json({'error': {'code': 403, 'msg': 'ALRDY_AUTH_ERR', 'details': 'The user is already authenticated'}});
   }else{
@@ -278,7 +299,7 @@ var post_user_auth = function(req, res){
   }
 };
 
-var prepare_post_like_status = function(req){
+var prepare_post_like_status = exports.prepare_post_like_status = function(req){
   var likeStatus = req.body;
   likeStatus.message_id = likeStatus.id;
   delete likeStatus.id;
@@ -290,11 +311,6 @@ var prepare_post_like_status = function(req){
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'message_id' parameter"
-    },{
-      rule: likeStatus.user_id !== undefined,
-      code: 400,
-      msg: 'PARAM_ERR',
-      details: "Missing 'user_id' parameter"
     },{
       rule: likeStatus.likeStatus !== undefined,
       code: 400,
@@ -311,20 +327,23 @@ var prepare_post_like_status = function(req){
   return {error: error, version: req.params.version, likeStatus: likeStatus};
 };
 
-var post_like_status = function(req, res){
-  var prep = prepare_post_like_status(req);
-  
-  if(prep.error !== null) res.json(prep.error);
-  else{
-    mysql_helper.postLikeStatus(prep.likeStatus, function(error, results){
-      if(error){
-        console.error(error);
-        res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
-      }else{
-        var result = _.last(results);
-        res.json(formatResponse(prep.version, 201, 'Created', result));
-      }
-    });
+var post_like_status = exports.post_like_status = function(req, res){
+  if(!req.session.user_id){
+    res.json(formatError(401, 'NOT_AUTH_ERR', 'User not authenticated'));
+  }else{
+    var prep = prepare_post_like_status(req);
+    if(prep.error !== null) res.json(prep.error);
+    else{
+      mysql_helper.postLikeStatus(prep.likeStatus, function(error, results){
+        if(error){
+          console.error(error);
+          res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
+        }else{
+          var result = _.last(results);
+          res.json(formatResponse(prep.version, 201, 'Created', result));
+        }
+      });
+    }
   }
 };
 
@@ -388,7 +407,7 @@ var post_signup = exports.post_signup = function(req, res){
   }
 };
 
-var handleError = function(rules){
+var handleError = exports.handleError = function(rules){
   var result = null;
 
   _.every(rules, function(rule){
@@ -401,29 +420,11 @@ var handleError = function(rules){
   return result;
 };
 
-var formatResponse = function(version, success_code, success_msg, data){
+var formatResponse = exports.formatResponse = function(version, success_code, success_msg, data){
   return (version === 'v1') ? data : {'success': {'code': success_code, 'msg': success_msg}, 'data': data};
 };
 
-var formatError = function(error_code, error_msg, error_details){
+var formatError = exports.formatError = function(error_code, error_msg, error_details){
   return {'error': {'code': error_code, 'msg': error_msg, 'details': error_details}};
 };
 
-exports.get_index = get_index;
-exports.prepare_get_previews = prepare_get_previews;
-exports.get_previews = get_previews;
-exports.prepare_get_message = prepare_get_message;
-exports.get_message = get_message;
-exports.prepare_post_message = prepare_post_message;
-exports.post_message = post_message;
-exports.prepare_get_comments = prepare_get_comments;
-exports.get_comments = get_comments;
-exports.prepare_post_comment = prepare_post_comment;
-exports.post_comment = post_comment;
-exports.get_user_auth = get_user_auth;
-exports.post_user_auth = post_user_auth;
-exports.prepare_post_like_status = prepare_post_like_status;
-exports.post_like_status = post_like_status;
-exports.handleError = handleError;
-exports.formatResponse = formatResponse;
-exports.formatError = formatError;
