@@ -415,6 +415,8 @@ var post_signup = exports.post_signup = function(req, res){
             res.json(formatError(409, 'USERNAME_ERR', 'User name already in use'));
           }
         }else{
+          req.session.user_name = prep.user_name;
+          req.session.user_id = result.insertId;
           res.json(formatResponse(prep.version, 201, 'Created', {'user_id': result.insertId, 'user_name': prep.user_name}));
         }
       }
