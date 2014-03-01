@@ -294,4 +294,58 @@ describe('topaz-app.js', function(){
       topaz.post_signup(req, res);
     });
   });
+  
+  describe('prepapre_post_like_status', function(){
+    describe('with correct input', function(){
+      it('should return a valid prepared get_comments query', function(done){
+        var input = {id: 55, likeStatus: 'NONE'};
+        var likeStatus = {message_id: input.id, user_id: 101, likeStatus: input.likeStatus};
+        var req = {params: {version: 'v1.1'}, body: input, session: {user_id: 101}};
+        var actual = topaz.prepare_post_like_status(req);
+        var ref = {error: null, version: 'v1.1', likeStatus: likeStatus};
+        actual.should.eql(ref);
+        done();
+      });
+    });
+    
+    describe('with bad input', function(){
+      it('should return an error 400', function(done){
+        var input = {id: 55, likeStatus: 'UNRECOGNIZED'};
+        var req = {params: {version: 'v1.1'}, body: input, session: {user_id: 101}};
+        var actual = topaz.prepare_post_like_status(req);
+        var ref = {error: {code: 400, msg: 'PARAM_ERR', details: "Invalid 'likeStatus' parameter"}};
+        actual.error.should.eql(ref);
+        done();
+      });
+    });
+    
+  });
+  
+  describe('post_like_status', function(){
+    var obj = {};
+    before(function(ready){
+      insert_dummy_user({name: 'Bobugua', email: 'bob@email.fr', pass:'a', salt:'a'}, function(user){
+        obj.user_id = user.id;
+        insert_dummy_message({text: 'test_postLikeStatus', lat: 101, long:202, user_id: user.id}, function(message){
+          obj.message_id = message.id;
+          obj.date = message.date;
+          ready();
+        });
+      });
+    });
+    it('should return a 201 response', function(done){
+      var input = {id: obj.message_id, likeStatus: 'LIKED'};
+      var ref = {id: obj.message_id, text: 'test_postLikeStatus', user_name: 'Bobugua', likes: 1, dislikes: 0, date: obj.date};
+      var req = {params: {version: 'v1.1'}, body: input, session: {user_id: obj.user_id}};
+      var res = {
+        json: function(actual){
+          (actual.error === undefined).should.be.true;
+          actual.success.code.should.equal(201);
+          actual.data.should.eql(ref);
+          done();
+        }
+      };
+      topaz.post_like_status(req, res);
+    });
+  });
 });
