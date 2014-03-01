@@ -10,7 +10,7 @@ var insert_dummy_message = function(message, callback){
   var query = 'INSERT INTO test_messages (`text`, `lat`, `long`, `date`, `user_id`)'
     + ' VALUES(:text, :lat, :long, :date, :user_id)';
   message.date = new Date().getTime();
-  message.user_id = 99;
+  message.user_id = message.user_id || 99;
   mysql_helper.doQuery(query, message, function(error, results){
     if(error !== null){throw Error('Unable to create a dummy message'+error);};
     var inserted_message = message;
@@ -111,54 +111,93 @@ describe('topaz-app.js', function(){
   });
 
   describe('get_previews()', function(){
-    var input = {'lat': 12, 'long': 34, 'text': 'Hello World'};
-    it('should return a formatted list of previews', function(done){
-      insert_dummy_message(input, function(message){
-        var req = {'params': {'lat1': 11, 'lat2': 13, 'long1': 33, 'long2': 35}};
-        var res = {'json': function(object){
-          object.success.should.not.equal(undefined);
-          object.data.should.includeEql(message);
-          done();
-        }};
-        topaz.get_previews(req, res);
+    var message;
+    before(function(ready){
+      insert_dummy_user({name: 'Bob', email: 'bob@email.fr', pass:'a', salt:'a'}, function(user){
+        var input = {'lat': 12, 'long': 34, 'text': 'Hello World', user_id: user.id};
+        insert_dummy_message(input, function(inserted_message){
+          message = inserted_message;
+          message.likes = 0;
+          message.dislikes = 0;
+          message.user_name = user.name;
+          ready();
+        });
       });
+    });
+    it('should return a formatted list of previews', function(done){
+      var req = {'params': {'lat1': 11, 'lat2': 13, 'long1': 33, 'long2': 35},
+        session: {user_id: 1}};
+      var res = {'json': function(object){
+        object.success.should.not.equal(undefined);
+        object.data.should.includeEql(message);
+        done();
+      }};
+      topaz.get_previews(req, res);
     });
   });
 
   describe('prepare_get_message()', function(){
-    var input = {'id': 98, 'version': 'v1.1'};
-    var req = {'params': input};
-
+    var input = {version: 'v1.1'};
+    var req;
+    var ref;
+    before(function(ready){
+      insert_dummy_user({name: 'Bobi', email: 'bob@email.fr', pass:'a', salt:'a'}, function(user){
+        var input_message = {'lat': 12, 'long': 34, 'text': 'Hello World', user_id: user.id};
+        insert_dummy_message(input_message, function(inserted_message){
+          input.id = inserted_message.id;
+          req = {'params': input, session: {user_id: user.id}};
+          ref = {error: null, version: 'v1.1', id: inserted_message.id, user_id: user.id, with_comments: undefined};
+          ready();
+        });
+      });
+    });
     it('should return a formatted query to get a message', function(done){
       var actual = topaz.prepare_get_message(req);
       (actual.error === null).should.be.true;
-      delete actual.error;
-      actual.should.eql(input);
+      actual.should.eql(ref);
       done();
     });
   });
 
   describe('get_message()', function(){
-    var input = {'lat': 98, 'long': 76, 'text': '99 Luftballons'};
+    var message;
+    before(function(ready){
+      insert_dummy_user({name: 'Bobibob', email: 'bob@email.fr', pass:'a', salt:'a'}, function(user){
+        var input = {'lat': 98, 'long': 76, 'text': '99 Luftballons', user_id: user.id};
+        insert_dummy_message(input, function(inserted_message){
+          message = inserted_message;
+          message.likes = 0;
+          message.dislikes = 0;
+          message.user_name = user.name;
+          message.likeStatus = 'NONE';
+          ready();
+        });
+      });
+    });
 
     it('should return a message', function(done){
-      insert_dummy_message(input, function(message){
-        var req = {'params': {'version': 'v1.1', 'id': message.id}};
-        var res = {
-          json: function(actual){
-            actual.should.eql(topaz.formatResponse('v1.1', 200, 'OK', message));
-            done();
-          }
-        };
-        topaz.get_message(req, res);
-      });
+      var req = {'params': {'version': 'v1.1', 'id': message.id}, session: {user_id: message.user_id}};
+      var res = {
+        json: function(actual){
+          var reponse = topaz.formatResponse('v1.1', 200, 'OK', message);
+          actual.should.eql(reponse);
+          done();
+        }
+      };
+      topaz.get_message(req, res);
     });
   });
 
   describe('prepare_post_message()', function(){
+    var input = {'lat': 21, 'long': 43, 'text': 'I wear my sunglasses at night !'};
+    before(function(ready){
+      insert_dummy_user({name: 'Bobibobuy', email: 'bob@email.fr', pass:'a', salt:'a'}, function(user){
+        input.user_id = user.id;
+        ready();
+      });
+    });
     it('should return a valid post_message query', function(done){
-      var input = {'lat': 21, 'long': 43, 'text': 'I wear my sunglasses at night !'};
-      var req = {'body': input, 'params': {'version': 'v1.1'}};
+      var req = {'body': input, 'params': {'version': 'v1.1'}, session: {user_id: input.user_id}};
       var actual = topaz.prepare_post_message(req);
 
       (actual.error === null).should.be.true;
@@ -200,10 +239,20 @@ describe('topaz-app.js', function(){
   });
 
   describe('get_comments()', function(){
+    var comment;
+    before(function(ready){
+      var user = {name: 'Badfafa', email: 'bob@email.fr', pass:'a', salt:'a'};
+      insert_dummy_user(user, function(new_user){
+        var com = {'text': 'I come to the valley of the rich', 'message_id': 199, 'user_id': new_user.id};
+        insert_dummy_comment(com, function(inserted_comment){
+          comment = inserted_comment;
+          comment.user_name = new_user.name;
+          ready();
+        });
+      });
+    });
     it('should return a res with comments', function(done){
-      var comment = {'text': 'I come to the valley of the rich', 'message_id': 199, 'user_id': 99};
-      insert_dummy_comment(comment, function(inserted_comment){
-      var req = {'params': {'message_id': comment.message_id}};
+      var req = {'params': {'message_id': comment.message_id}, session: {user_id: comment.user_id}};
       var res = {
         json: function(actual){
           (actual.error === undefined).should.be.true;
@@ -212,7 +261,6 @@ describe('topaz-app.js', function(){
         }
       };
       topaz.get_comments(req, res);
-      });
     });
   });
 
@@ -233,8 +281,8 @@ describe('topaz-app.js', function(){
   describe('post_signup()', function(){
     it('should create a user', function(done){
       var name = 'oliver_queen';
-      var input = {'user_name': name, 'user_password': 'felicity', 'user_email': 'oli.queen@staronline.com'};
-      var req = {'body': input};
+      var input = {user_name: name, user_password: 'felicity', user_email: 'oli.queen@staronline.com', version: 'v1.1'};
+      var req = {body: input};
       var res = {
         json: function(actual){
           (actual.error === undefined).should.be.true;

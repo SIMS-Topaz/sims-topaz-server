@@ -77,7 +77,6 @@ var get_previews = exports.get_previews = function(req, res){
     }else{
       mysql_helper.getPreviews(prep.lat1, prep.long1, prep.lat2, prep.long2, function (error, results) {
         if(error){
-          console.error(error);
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
           res.json(formatResponse(prep.version, 200, 'OK', results));
@@ -120,13 +119,11 @@ var get_message = exports.get_message = function(req, res){
     }else{
       mysql_helper.getMessage(prep.id, prep.user_id, function (error, message){
         if(error){
-          console.error(error);
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
           if(prep.with_comments == 'WITH_COMMENTS'){
             mysql_helper.getComments(prep.id, function(err, comments){
               if(err){
-                console.error(err);
                 res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
               }else{
                 message.comments = comments;
@@ -189,7 +186,6 @@ var post_message = exports.post_message = function(req, res){
     }else{
       mysql_helper.postMessage(prep.message, function (error, result){
         if(error){
-          console.error(error);
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
           prep.message['id'] = result.insertId;
@@ -225,7 +221,6 @@ var get_comments = exports.get_comments = function(req, res){
     }else{
       mysql_helper.getComments(prep.message_id, function(error, results){
         if(error){
-          console.error(error);
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
           res.json(formatResponse(prep.version, 200, 'OK', results));
@@ -267,7 +262,6 @@ var post_comment = exports.post_comment = function(req, res){
     else{
       mysql_helper.postComment(prep.comment, function(error, result){
         if(error){
-          console.error(error);
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
           prep.comment['id'] = result.insertId;
@@ -352,7 +346,6 @@ var post_like_status = exports.post_like_status = function(req, res){
     else{
       mysql_helper.postLikeStatus(prep.likeStatus, function(error, message){
         if(error){
-          console.error(error);
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
           res.json(formatResponse(prep.version, 201, 'Created', message));
@@ -415,8 +408,7 @@ var post_signup = exports.post_signup = function(req, res){
             res.json(formatError(409, 'USERNAME_ERR', 'User name already in use'));
           }
         }else{
-          req.session.user_name = prep.user_name;
-          req.session.user_id = result.insertId;
+          req.session = {user_name: prep.user_name, user_id: result.insertId};
           res.json(formatResponse(prep.version, 201, 'Created', {'user_id': result.insertId, 'user_name': prep.user_name}));
         }
       }

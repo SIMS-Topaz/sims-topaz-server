@@ -13,7 +13,6 @@ var message_table = (process.env.NODE_ENV==='test')?'test_messages':'messages';
 var user_table = (process.env.NODE_ENV==='test')?'test_users':'users';
 var vote_table = (process.env.NODE_ENV==='test')?'test_votes':'votes';
 
-/*=========================== CONNECTION ===========================*/
 var openConnection = exports.openConnection = function(){
   client = mysql.createConnection(conf.mysql);
   
@@ -75,12 +74,11 @@ var handleDisconnect = exports.handleDisconnect = function(){
     }
   });
 };
-/*============================================================*/
 
-/*=========================== DATA ===========================*/
 // does request 'query' and call 'callback' with the query's result
 var doQuery = exports.doQuery = function(query, params, callback){
   client.query(query, params, function(error, results){
+    if(error) console.error(error);
     callback(error, results);
   });
 };
@@ -114,11 +112,15 @@ var getMessage = exports.getMessage = function(id, user_id, callback){
     + ' WHERE `message_id` = :id AND `user_id` = :user_id';
   var params = {id: id, user_id: user_id};
   doQuery(query, params, function(error, results){
-    results = _.flatten(results);
-    var final_result = _.extend(results[0], results[1]);
-    final_result.likeStatus = final_result.likeStatus || 'NONE';
-    final_result = (error===null) ? final_result || null : null;
-    callback(error, final_result);
+    if(error){
+      callback(error, null);
+    }else{
+      results = _.flatten(results);
+      var final_result = _.extend(results[0], results[1]);
+      final_result.likeStatus = final_result.likeStatus || 'NONE';
+      final_result = (error===null) ? final_result || null : null;
+      callback(error, final_result);
+    }
   });
 };
 
@@ -129,8 +131,12 @@ var postMessage = exports.postMessage = function(message, callback){
     + ' VALUES (:text, :lat, :long, :date, :user_id); ';
   query += 'SELECT `name` AS `user_name` FROM '+user_table+' WHERE `id` = :user_id; ';
   doQuery(query, message, function(error, results){
-    results = _.flatten(results);
-    callback(error, _.extend(results[0], results[1]));
+    if(error){
+      callback(error, null);
+    }else{
+      results = _.flatten(results);
+      callback(error, _.extend(results[0], results[1]));
+    }
   });
 };
 
@@ -140,9 +146,7 @@ var getComments = exports.getComments = function(message_id, callback){
     + ' FROM '+comment_table+' AS `comments`, '+user_table+' AS `users`'
     + ' WHERE `message_id` = :message_id AND `users`.`id` = `user_id`';
   var params = {message_id: message_id};
-  doQuery(query, params, function(error, results){
-    callback(error, results);
-  });
+  doQuery(query, params, callback);
 };
 
 // inserts new comment
@@ -161,52 +165,116 @@ var postComment = exports.postComment = function(comment, callback){
 var postLikeStatus = exports.postLikeStatus = function(likeStatus, callback){
   var query_vote = 'SELECT `vote` FROM ' + vote_table
     + ' WHERE `message_id` = :message_id AND `user_id` = :user_id';
-  doQuery(query_vote, likeStatus, function(error_vote, result){
-    var previous_vote = (_.isArray(result) && _.isObject(result[0])) ? result[0].vote : null;
-    var queries = '';
-
-    if(error_vote) console.log(error_vote);
-    
-    if(previous_vote != likeStatus.likeStatus){
-      if(!previous_vote){
-        var vote = (likeStatus.likeStatus == 'LIKED') ? '`likes`' : '`dislikes`';
-        queries = 'UPDATE '+message_table+' SET '+vote+' = '+vote+' + 1 WHERE `id` = :message_id; ';
-        queries += 'INSERT INTO '+vote_table+' (`user_id`, `message_id`, `vote`)'
-          + ' VALUES (:user_id, :message_id, :likeStatus); ';
-      }else if(previous_vote == 'LIKED'){
-        if(likeStatus.likeStatus == 'DISLIKED'){
-          queries = 'UPDATE '+vote_table+' SET `vote` = :likeStatus'
-            + ' WHERE `message_id` = :message_id AND `user_id` = :user_id; ';
-          queries += 'UPDATE '+message_table+' SET `dislikes` = `dislikes` + 1, '
-            + '`likes` = `likes` - 1 WHERE `id` = :message_id; ';
-        }else if(likeStatus.likeStatus == 'NONE'){
-          queries = 'DELETE FROM '+vote_table+' WHERE `message_id` = :message_id AND `user_id` = :user_id; '
-            + 'UPDATE '+message_table+' SET `likes` = `likes` - 1 WHERE `id` = :message_id; ';
-        }
-      }else if(previous_vote == 'DISLIKED'){
-        if(likeStatus.likeStatus == 'LIKED'){
-          queries = 'UPDATE '+vote_table+' SET `vote` = :likeStatus'
-            + ' WHERE `message_id` = :message_id AND `user_id` = :user_id; ';
-          queries += 'UPDATE '+message_table+' SET `likes` = `likes` + 1, '
-            + '`dislikes` = `dislikes` - 1 WHERE `id` = :message_id; '; 
-        }else if(likeStatus.likeStatus == 'NONE'){
-          queries = 'DELETE FROM '+vote_table+ ' WHERE `message_id` = :message_id AND `user_id` = :user_id; ';
-          queries += ' UPDATE '+message_table+' SET `dislikes` = `dislikes` - 1 WHERE `id` = :message_id; ';
+  var query_firstVote = function(vote){
+    var query_update = 'UPDATE '+message_table+' SET `'+vote+'` = `'+vote+'` + 1 WHERE `id` = :message_id; ';
+    var query_insert = 'INSERT INTO '+vote_table+' (`user_id`, `message_id`, `vote`)'
+      + ' VALUES (:user_id, :message_id, :likeStatus); ';
+    return query_update+query_insert;
+  };
+  var query_cancelVote = function(vote){
+    var query_delete = 'DELETE FROM '+vote_table+' WHERE `message_id` = :message_id AND `user_id` = :user_id; ';
+    var query_update = 'UPDATE '+message_table+' SET `'+vote+'` = `'+vote+'` - 1 WHERE `id` = :message_id; ';
+    return query_delete+query_update;
+  };
+  var query_updateVote = function(previous_vote, current_vote){
+    var query_update_vote = 'UPDATE '+vote_table+' SET `vote` = :likeStatus'
+      + ' WHERE `message_id` = :message_id AND `user_id` = :user_id; ';
+    var query_update_message = 'UPDATE '+message_table+' SET `'+current_vote+'` = `'+current_vote+'` + 1, `'
+      + previous_vote+'` = `'+previous_vote+'` - 1 WHERE `id` = :message_id; ';
+    return query_update_vote+query_update_message;
+  };
+  var last_query = 'SELECT `messages`.`id`, `text`, `date`, `likes`, `dislikes`, `name` AS `user_name`'
+    + ' FROM '+message_table+' AS `messages`, '+user_table+' AS `users`'
+    + ' WHERE `messages`.`id` = :message_id AND `users`.`id` = `user_id`; ';
+  
+  doQuery(query_vote, likeStatus, function(error_vote, result_vote){
+    if(error_vote){
+      callback(error_vote, null);
+    }else{
+      var previous_vote = (_.isArray(result_vote) && _.isObject(result_vote[0])) ? result_vote[0].vote : 'NONE';
+      var current_vote  = likeStatus.likeStatus;
+      var queries = '';
+      
+      if(previous_vote != current_vote){
+        if(previous_vote == 'NONE'){
+          var vote = (current_vote == 'DISLIKED') ? 'dislikes' : 'likes';
+          queries += query_firstVote(vote);
+        }else if(current_vote == 'NONE'){
+          var vote = (previous_vote == 'DISLIKED') ? 'dislikes' : 'likes';
+          queries += query_cancelVote(vote);
+        }else{
+          if(previous_vote == 'DISLIKED') queries += query_updateVote('dislikes', 'likes');
+          else queries += query_updateVote('likes', 'dislikes');
         }
       }
+      
+      queries += last_query;
+      doQuery(queries, likeStatus, function(error, results){
+        if(error){
+          callback(error, null);
+        }else{
+          var result = _.last(results);
+          var final_result = (_.isArray(result)) ? result[0] : result;
+          callback(error, final_result);
+        }
+      });
     }
-    queries += ' SELECT `messages`.`id`, `text`, `date`, `likes`, `dislikes`, `name` AS `user_name`'
-      + ' FROM '+message_table+' AS `messages`, '+user_table+' AS `users`'
-      + ' WHERE `messages`.`id` = :message_id AND `users`.`id` = `user_id`; ';
-    doQuery(queries, likeStatus, function(error, results){
-      if(error) console.log(error);
-      var result = _.last(results);
-      var final_result = (_.isArray(result)) ? result[0] : result;
-      callback(error, final_result);
-    });
   });
 };
 
+var _postLikeStatus = exports._postLikeStatus = function(likeStatus, callback){
+  var query_vote = 'SELECT `vote` FROM ' + vote_table
+    + ' WHERE `message_id` = :message_id AND `user_id` = :user_id';
+  doQuery(query_vote, likeStatus, function(error_vote, result){
+    if(error_vote){
+      callback(error_vote, null);
+    }else{
+      var previous_vote = (_.isArray(result) && _.isObject(result[0])) ? result[0].vote : null;
+      var queries = '';
+    
+      if(previous_vote != likeStatus.likeStatus){
+        if(!previous_vote){
+          var vote = (likeStatus.likeStatus == 'LIKED') ? '`likes`' : '`dislikes`';
+          queries = 'UPDATE '+message_table+' SET '+vote+' = '+vote+' + 1 WHERE `id` = :message_id; ';
+          queries += 'INSERT INTO '+vote_table+' (`user_id`, `message_id`, `vote`)'
+            + ' VALUES (:user_id, :message_id, :likeStatus); ';
+        }else if(previous_vote == 'LIKED'){
+          if(likeStatus.likeStatus == 'DISLIKED'){
+            queries = 'UPDATE '+vote_table+' SET `vote` = :likeStatus'
+              + ' WHERE `message_id` = :message_id AND `user_id` = :user_id; ';
+            queries += 'UPDATE '+message_table+' SET `dislikes` = `dislikes` + 1, '
+              + '`likes` = `likes` - 1 WHERE `id` = :message_id; ';
+          }else if(likeStatus.likeStatus == 'NONE'){
+            queries = 'DELETE FROM '+vote_table+' WHERE `message_id` = :message_id AND `user_id` = :user_id; ';
+            queries += 'UPDATE '+message_table+' SET `likes` = `likes` - 1 WHERE `id` = :message_id; ';
+          }
+        }else if(previous_vote == 'DISLIKED'){
+          if(likeStatus.likeStatus == 'LIKED'){
+            queries = 'UPDATE '+vote_table+' SET `vote` = :likeStatus'
+              + ' WHERE `message_id` = :message_id AND `user_id` = :user_id; ';
+            queries += 'UPDATE '+message_table+' SET `likes` = `likes` + 1, '
+              + '`dislikes` = `dislikes` - 1 WHERE `id` = :message_id; '; 
+          }else if(likeStatus.likeStatus == 'NONE'){
+            queries = 'DELETE FROM '+vote_table+ ' WHERE `message_id` = :message_id AND `user_id` = :user_id; ';
+            queries += ' UPDATE '+message_table+' SET `dislikes` = `dislikes` - 1 WHERE `id` = :message_id; ';
+          }
+        }
+      }
+      queries += ' SELECT `messages`.`id`, `text`, `date`, `likes`, `dislikes`, `name` AS `user_name`'
+        + ' FROM '+message_table+' AS `messages`, '+user_table+' AS `users`'
+        + ' WHERE `messages`.`id` = :message_id AND `users`.`id` = `user_id`; ';
+      doQuery(queries, likeStatus, function(error, results){
+        if(error){
+          callback(error, null);
+        }else{
+          var result = _.last(results);
+          var final_result = (_.isArray(result)) ? result[0] : result;
+          callback(error, final_result);
+        }
+      });
+    }
+  });
+};
 
 // removes a row
 //TODO: upgrade it to be useful
@@ -245,6 +313,7 @@ var postSignup = exports.postSignup = function(user_name, user_password, user_em
         var shasum = crypto.createHash('sha1').update(hsalt+user_password);
         var hpass = shasum.digest('hex');
         var params = {'name': user_name, 'pass': hpass, 'salt': hsalt, 'email': user_email};
+        //console.dir(params);
         var query = 'INSERT INTO '+user_table+' (`name`, `email`, `salt`, `password`)'
           + ' VALUES (:name, :email, :salt, :pass)';
         doQuery(query, params, callback);
