@@ -10,6 +10,6 @@ test:
 	export NODE_ENV=test; mocha -u bdd -R spec
 
 install:
-	npm install; npm install mocha -g
+	npm install; npm install mocha -g; mkdir uploads sslcert;
 
 .PHONY: test

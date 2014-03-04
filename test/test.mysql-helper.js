@@ -96,7 +96,7 @@ describe('mysql-helper.js', function(){
 
   describe('postMessage()', function(){
     it('should insert a message in the db and return an ack', function(done){
-      var message = {'lat':48,'long':15,'text':'Flynn Lives !', 'user_id': 456};
+      var message = {'lat':48,'long':15,'text':'Flynn Lives !', 'user_id': 456, 'picture_url': null};
       mysql_helper.postMessage(message, function(error, actual){
         (error === null).should.be.true;
         done();

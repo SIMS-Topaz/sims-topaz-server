@@ -1,7 +1,10 @@
+var crypto = require('crypto');
+var path = require('path');
+
+var _ = require ('underscore');
+
 var mysql_helper = require('./mysql-helper.js');
 var conf  = require('./conf.js');
-var _ = require ('underscore');
-var crypto = require('crypto');
 
 var get_index = exports.get_index = function(req, res){
   res.send('Topaz Server Working!');
@@ -141,7 +144,11 @@ var get_message = exports.get_message = function(req, res){
 
 var prepare_post_message = exports.prepare_post_message = function(req){
   // curl -X POST -H "Content-Type:application/json" -H "Accept:application/json" http://localhost:8080/api/v1.1/post_message -d '{"lat":12,"long":12,"text":"Hello World"}'
-  var message = req.body;
+  var message;
+  if(version === 'v1.3')
+    message = JSON.parse(req.body.request);
+  else
+    message = req.body;
   message.user_id = req.session.user_id;
   var version = req.params.version;
   var rules = [
@@ -184,6 +191,8 @@ var post_message = exports.post_message = function(req, res){
     if(prep.error !== null){
       res.json(prep.error);
     }else{
+      if(req.files)
+        prep.message['picture_url'] = 'img/'+path.basename(req.files.file.path);
       mysql_helper.postMessage(prep.message, function (error, result){
         if(error){
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));

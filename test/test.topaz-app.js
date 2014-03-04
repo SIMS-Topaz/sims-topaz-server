@@ -214,7 +214,7 @@ describe('topaz-app.js', function(){
 
   describe('post_message()', function(){
     it('should return a valid post_message response', function(done){
-      var input = {'lat': 10, 'long': 29, 'text': 'No, I am your father !'};
+      var input = {'lat': 10, 'long': 29, 'text': 'No, I am your father !', 'picture_url': null};
       var req = {'body': input, 'session': {'user_id': 313}, 'params': {'version': 'v1.1'}};
       var res = {
         json: function(actual){
