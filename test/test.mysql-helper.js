@@ -122,13 +122,33 @@ describe('mysql-helper.js', function(){
   });
 
   describe('postComment', function(){
-    it('should insert a comment in the database', function(done){
-      var comment = {'text': 'hello', 'message_id': 1, 'user_id': 2};
-      mysql_helper.postComment(comment, function(error, actual){
-        (error === null).should.be.true;
-        actual.should.not.be.undefined;
-        actual.insertId.should.be.above(0);
-        done();
+    describe('Comment on a not existing message', function(){
+      it('should return an error', function(done){
+        var comment = {'text': 'hello', 'message_id': -1, 'user_id': 2};
+        mysql_helper.postComment(comment, function(error, actual){
+          (error !== null).should.be.true;
+          (actual === null).should.be.true;
+          done();
+        });
+      });
+    });
+    
+    describe('Comment on an existing message', function(){
+      var message_id;
+      before(function(ready){
+        insert_dummy_message({text: 'test post comment on not existing message', lat: 101, long:202, user_id: 1}, function(message){
+          message_id = message.id;
+          ready();
+        });
+      });
+      it('should insert a comment in the database', function(done){
+        var comment = {'text': 'hello all', 'message_id': message_id, 'user_id': 2};
+        mysql_helper.postComment(comment, function(error, actual){
+          (error === null).should.be.true;
+          actual.should.not.be.undefined;
+          actual.insertId.should.be.above(0);
+          done();
+        });
       });
     });
   });
@@ -177,7 +197,7 @@ describe('mysql-helper.js', function(){
     });
   });
 
-  describe('postLikeStatus', function(){
+  describe('doPostLikeStatus', function(){
     describe('NoneToLiked', function(){
       var obj = {};
       before(function(ready){
@@ -191,8 +211,8 @@ describe('mysql-helper.js', function(){
       });
       it('should like a message for the first time', function(done){
         var likeStatus = {message_id: obj.message_id, user_id: obj.user_id, likeStatus: 'LIKED'};
-        mysql_helper.postLikeStatus(likeStatus, function(error, actual){
-          var ref = {id: obj.message_id, user_name: 'Bob', text: 'test_postLikeStatus_noneToLiked', likes: 1, dislikes: 0};
+        mysql_helper.doPostLikeStatus(likeStatus, function(error, actual){
+          var ref = {id: obj.message_id, user_name: 'Bob', text: 'test_postLikeStatus_noneToLiked', likes: 1, dislikes: 0, likeStatus: 'LIKED'};
           (error === null).should.be.true;
           delete actual.date;
           actual.should.eql(ref);
@@ -214,8 +234,8 @@ describe('mysql-helper.js', function(){
       });
       it('should dislike a message for the first time', function(done){
         var likeStatus = {message_id: obj.message_id, user_id: obj.user_id, likeStatus: 'DISLIKED'};
-        mysql_helper.postLikeStatus(likeStatus, function(error, actual){
-          var ref = {id: obj.message_id, user_name: 'Bab', text: 'test_postLikeStatus_noneToDisliked', likes: 0, dislikes: 1};
+        mysql_helper.doPostLikeStatus(likeStatus, function(error, actual){
+          var ref = {id: obj.message_id, user_name: 'Bab', text: 'test_postLikeStatus_noneToDisliked', likes: 0, dislikes: 1, likeStatus: 'DISLIKED'};
           (error === null).should.be.true;
           delete actual.date;
           actual.should.eql(ref);
@@ -232,7 +252,7 @@ describe('mysql-helper.js', function(){
           insert_dummy_message({text: 'test_postLikeStatus_likedToDisliked', lat: 101, long:202, user_id: user.id}, function(message){
             obj.message_id = message.id;
             var likeStatus = {message_id: obj.message_id, user_id: obj.user_id, likeStatus: 'LIKED'};
-            mysql_helper.postLikeStatus(likeStatus, function(error, result){
+            mysql_helper.doPostLikeStatus(likeStatus, function(error, result){
               if(error) console.log(error);
               ready();
             });
@@ -241,8 +261,8 @@ describe('mysql-helper.js', function(){
       });
       it('should dislike a message after having liked it', function(done){
         var likeStatus = {message_id: obj.message_id, user_id: obj.user_id, likeStatus: 'DISLIKED'};
-        mysql_helper.postLikeStatus(likeStatus, function(error, actual){
-          var ref = {id: obj.message_id, user_name: 'Bub', text: 'test_postLikeStatus_likedToDisliked', likes: 0, dislikes: 1};
+        mysql_helper.doPostLikeStatus(likeStatus, function(error, actual){
+          var ref = {id: obj.message_id, user_name: 'Bub', text: 'test_postLikeStatus_likedToDisliked', likes: 0, dislikes: 1, likeStatus: 'DISLIKED'};
           (error === null).should.be.true;
           delete actual.date;
           actual.should.eql(ref);
@@ -259,7 +279,7 @@ describe('mysql-helper.js', function(){
           insert_dummy_message({text: 'test_postLikeStatus_likedToNone', lat: 101, long:202, user_id: user.id}, function(message){
             obj.message_id = message.id;
             var likeStatus = {message_id: obj.message_id, user_id: obj.user_id, likeStatus: 'LIKED'};
-            mysql_helper.postLikeStatus(likeStatus, function(error, result){
+            mysql_helper.doPostLikeStatus(likeStatus, function(error, result){
               if(error) console.log(error);
               ready();
             });
@@ -268,8 +288,8 @@ describe('mysql-helper.js', function(){
       });
       it('should revert a LIKED vote', function(done){
         var likeStatus = {message_id: obj.message_id, user_id: obj.user_id, likeStatus: 'NONE'};
-        mysql_helper.postLikeStatus(likeStatus, function(error, actual){
-          var ref = {id: obj.message_id, user_name: 'Bib', text: 'test_postLikeStatus_likedToNone', likes: 0, dislikes: 0};
+        mysql_helper.doPostLikeStatus(likeStatus, function(error, actual){
+          var ref = {id: obj.message_id, user_name: 'Bib', text: 'test_postLikeStatus_likedToNone', likes: 0, dislikes: 0, likeStatus: 'NONE'};
           (error === null).should.be.true;
           delete actual.date;
           actual.should.eql(ref);
@@ -286,7 +306,7 @@ describe('mysql-helper.js', function(){
           insert_dummy_message({text: 'test_postLikeStatus_dislikedToLiked', lat: 101, long:202, user_id: user.id}, function(message){
             obj.message_id = message.id;
             var likeStatus = {message_id: obj.message_id, user_id: obj.user_id, likeStatus: 'DISLIKED'};
-            mysql_helper.postLikeStatus(likeStatus, function(error, result){
+            mysql_helper.doPostLikeStatus(likeStatus, function(error, result){
               if(error) console.log(error);
               ready();
             });
@@ -295,8 +315,8 @@ describe('mysql-helper.js', function(){
       });
       it('should like a message after having disliked it', function(done){
         var likeStatus = {message_id: obj.message_id, user_id: obj.user_id, likeStatus: 'LIKED'};
-        mysql_helper.postLikeStatus(likeStatus, function(error, actual){
-          var ref = {id: obj.message_id, user_name: 'Beb', text: 'test_postLikeStatus_dislikedToLiked', likes: 1, dislikes: 0};
+        mysql_helper.doPostLikeStatus(likeStatus, function(error, actual){
+          var ref = {id: obj.message_id, user_name: 'Beb', text: 'test_postLikeStatus_dislikedToLiked', likes: 1, dislikes: 0, likeStatus: 'LIKED'};
           (error === null).should.be.true;
           delete actual.date;
           actual.should.eql(ref);
@@ -313,7 +333,7 @@ describe('mysql-helper.js', function(){
           insert_dummy_message({text: 'test_postLikeStatus_dislikedToNone', lat: 101, long:202, user_id: user.id}, function(message){
             obj.message_id = message.id;
             var likeStatus = {message_id: obj.message_id, user_id: obj.user_id, likeStatus: 'DISLIKED'};
-            mysql_helper.postLikeStatus(likeStatus, function(error, result){
+            mysql_helper.doPostLikeStatus(likeStatus, function(error, result){
               if(error) console.log(error);
               ready();
             });
@@ -322,11 +342,40 @@ describe('mysql-helper.js', function(){
       });
       it('should revert a DISLIKED vote', function(done){
         var likeStatus = {message_id: obj.message_id, user_id: obj.user_id, likeStatus: 'NONE'};
-        mysql_helper.postLikeStatus(likeStatus, function(error, actual){
-          var ref = {id: obj.message_id, user_name: 'Byb', text: 'test_postLikeStatus_dislikedToNone', likes: 0, dislikes: 0};
+        mysql_helper.doPostLikeStatus(likeStatus, function(error, actual){
+          var ref = {id: obj.message_id, user_name: 'Byb', text: 'test_postLikeStatus_dislikedToNone', likes: 0, dislikes: 0, likeStatus: 'NONE'};
           (error === null).should.be.true;
           delete actual.date;
           actual.should.eql(ref);
+          done();
+        });
+      });
+    });
+  });
+  
+  describe('messageExists', function(){
+    describe('message DOES exist', function(){
+      var message_id;
+      before(function(ready){
+        var message = {'lat':408,'long':105,'text':'Troulalilalou !', 'user_id': 1, 'picture_url': null};
+        mysql_helper.postMessage(message, function(error, actual){
+          (error === null).should.be.true;
+          message_id = actual.insertId;
+          ready();
+        });
+      });
+      it('should return true', function(done){
+        mysql_helper.messageExists(message_id, function(error, exists){
+          (exists === true).should.be.true;
+          done();
+        });
+      });
+    });
+    
+    describe('message does NOT exist', function(){
+      it('should return false', function(done){
+        mysql_helper.messageExists(-1, function(error, exists){
+          (exists === false).should.be.true;
           done();
         });
       });
