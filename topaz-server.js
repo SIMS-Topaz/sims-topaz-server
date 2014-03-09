@@ -1,7 +1,3 @@
-/***************************************************************************
-topaz-server:
-service REST + websocket (maybe)
-**************************************************************************/
 var http    = require('http');
 var https   = require('https');
 var fs   = require('fs');
@@ -18,8 +14,8 @@ var RedisStore = require('connect-redis')(express);
 
 mysql_helper.openConnection();
 
-app.use(express.json())
-.use(express.urlencoded())
+app
+.use(express.bodyParser({ keepExtensions: true, uploadDir: './uploads/' }))
 .use(express.cookieParser())
 .use(express.session({
   store: new RedisStore({
@@ -28,6 +24,7 @@ app.use(express.json())
   }),
   secret: '12345'
 }))
+.use('/img', express.static(__dirname + '/uploads'))
 .get('/', topaz.get_index)
 .get('/api/:version/get_previews/:lat1?/:long1?/:lat2?/:long2?', topaz.get_previews)
 .get('/api/:version/get_message/:id?/:with_comments?', topaz.get_message)

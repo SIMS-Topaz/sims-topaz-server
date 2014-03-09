@@ -127,8 +127,8 @@ var getMessage = exports.getMessage = function(id, user_id, callback){
 // inserts new message in DB
 var postMessage = exports.postMessage = function(message, callback){
   message.date = new Date().getTime();
-  var query = 'INSERT INTO '+message_table+' (`text`, `lat`, `long`, `date`, `user_id`)'
-    + ' VALUES (:text, :lat, :long, :date, :user_id); ';
+  var query = 'INSERT INTO '+message_table+' (`text`, `lat`, `long`, `date`, `user_id`, `picture_url`)'
+    + ' VALUES (:text, :lat, :long, :date, :user_id, :picture_url); ';
   query += 'SELECT `name` AS `user_name` FROM '+user_table+' WHERE `id` = :user_id; ';
   doQuery(query, message, function(error, results){
     if(error){

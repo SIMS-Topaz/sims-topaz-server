@@ -8,7 +8,8 @@ CREATE TABLE `topaz`.`messages` (
   `long` FLOAT NOT NULL,
   `date` BIGINT NOT NULL,
   `likes` INT UNSIGNED NULL DEFAULT 0,
-  `dislikes` INT UNSIGNED NULL DEFAULT 0
+  `dislikes` INT UNSIGNED NULL DEFAULT 0,
+  `picture_url` TEXT
 );
 CREATE TABLE `topaz`.`test_messages` LIKE `topaz`.`messages`;
 
