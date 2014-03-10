@@ -246,7 +246,7 @@ var get_comments = exports.get_comments = function(req, res){
   }
 };
 
-var prepare_post_comment = prepare_post_comment = function(req){
+var prepare_post_comment = exports.prepare_post_comment = function(req){
   var comment = req.body;
   comment.user_id = req.session.user_id;
   comment.message_id = req.params.message_id;
@@ -274,8 +274,9 @@ var post_comment = exports.post_comment = function(req, res){
   }else{
     var prep = prepare_post_comment(req);
  
-    if(prep.error !== null) res.json(prep.error);
-    else{
+    if(prep.error !== null){
+      res.json(prep.error);
+    }else{
       mysql_helper.postComment(prep.comment, function(error, result){
         if(error){
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
@@ -358,8 +359,9 @@ var post_like_status = exports.post_like_status = function(req, res){
     res.json(formatError(401, 'NOT_AUTH_ERR', 'User not authenticated'));
   }else{
     var prep = prepare_post_like_status(req);
-    if(prep.error !== null) res.json(prep.error);
-    else{
+    if(prep.error !== null){
+      res.json(prep.error);
+    }else{
       mysql_helper.postLikeStatus(prep.likeStatus, function(error, message){
         if(error){
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
@@ -430,6 +432,96 @@ var post_signup = exports.post_signup = function(req, res){
         }
       }
     });
+  }
+};
+
+var prepare_get_user_info = exports.prepare_get_user_info = function(req){
+  var user_id = req.params.user_id;
+  var rules = [{
+      rule: (user_id !== undefined),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Missing 'user_id' parameter"
+  }];
+  var error = handleError(rules);
+  return {error: error, version: req.params.version, user_id: user_id};
+};
+
+var get_user_info = exports.get_user_info = function(req, res){
+  if(!req.session.user_id){
+    res.json(formatError(401, 'NOT_AUTH_ERR', 'User not authenticated'));
+  }else{
+    var prep = prepare_get_user_info(req);
+    if(prep.error !== null){
+      res.json(prep.error);
+    }else{
+      mysql_helper.getUserInfo(prep.user_id, function(error, user){
+        if(error){
+          res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
+        }else{
+          res.json(formatResponse(prep.version, 200, 'OK', user));
+        }
+      });
+    }
+  }
+};
+
+var prepare_post_user_info = exports.prepare_post_user_info = function(req){
+  var user = req.body;
+  user.user_id = req.session.user_id;
+
+  var rules = [
+    {
+      rule: (user.user_id !== undefined),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Missing 'user_id' parameter"
+    },{
+      rule: (user.user_name !== undefined),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Missing 'user_name' parameter"
+    },{
+      rule: (user.user_status !== undefined),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Missing 'user_status' parameter"
+    },{
+      rule: (user.user_email !== undefined),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Missing 'user_email' parameter"
+    }];
+  if(user.user_password){
+    rules.push({
+      rule: (user.user_password.length >= 4),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "'user_password' parameter too short"
+    });
+  }
+  
+  var error = handleError(rules);
+  return {error: error, version: req.params.version, user: user};
+};
+
+var post_user_info = exports.post_user_info = function(req, res){
+  if(!req.session.user_id){
+    res.json(formatError(401, 'NOT_AUTH_ERR', 'User not authenticated'));
+  }else{
+    var prep = prepare_post_user_info(req);
+ 
+    if(prep.error !== null){
+      res.json(prep.error);
+    }else{
+      mysql_helper.postUserInfo(prep.user, function(error, user){
+        if(error){
+          res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
+        }else{
+          res.json(formatResponse(prep.version, 200, 'OK', user));
+        }
+      });
+    }
   }
 };
 

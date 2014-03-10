@@ -296,11 +296,51 @@ var postSignup = exports.postSignup = function(user_name, user_password, user_em
         var shasum = crypto.createHash('sha1').update(hsalt+user_password);
         var hpass = shasum.digest('hex');
         var params = {'name': user_name, 'pass': hpass, 'salt': hsalt, 'email': user_email};
-        //console.dir(params);
         var query = 'INSERT INTO '+user_table+' (`name`, `email`, `salt`, `password`)'
           + ' VALUES (:name, :email, :salt, :pass)';
         doQuery(query, params, callback);
       }
+    }
+  });
+};
+
+var getUserInfo = exports.getUserInfo = function(user_id, callback){
+  var query_user = 'SELECT `id` AS `user_id`, `name` AS `user_name`, `email` AS `user_email`, `picture_url` AS `user_picture`'
+    + ' FROM '+user_table
+    + ' WHERE id=:user_id; ';
+  var query_messages = 'SELECT `id`, `text`, `lat`, `long`, `date`, `likes`, `dislikes`, `picture_url`'
+    + ' FROM '+message_table
+    + ' WHERE `user_id`= :user_id'
+    + ' ORDER BY `id` DESC LIMIT 10';
+  var params = {user_id: user_id};
+  doQuery(query_user+query_messages, params, function(error, results){
+    if(error){
+      callback(error, null);
+    }else{
+      var user_info = (results[0]) ? results[0] : {};
+      if(_.isArray(user_info)) user_info = user_info[0];
+      if(!_.isEmpty(user_info)){
+        user_info.user_messages = (results[1]) ? results[1] : [];
+        _.each(user_info.user_messages, function(user_message){
+          user_message.user_name = user_info.user_name;
+        });
+      }
+      callback(error, user_info);
+    }
+  });
+};
+
+var postUserInfo = exports.postUserInfo = function(new_user, callback){
+  var query_get_user = 'SELECT `password` AS `user_password`, '
+    + '`email` AS `user_email`, `picture_url` AS `user_picture`'
+    + ' FROM '+user_table
+    + ' WHERE `id`=:user_id';
+  var query_update = 'UPDATE '+user_table+' SET :changes WHERE `id`=:user_id';
+  doQuery(query_get_user, userInfo, function(error, old_user){
+    if(error){
+      callback(error, null);
+    }else{
+      callback(error, old_user);
     }
   });
 };

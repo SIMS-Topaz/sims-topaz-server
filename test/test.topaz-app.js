@@ -362,4 +362,61 @@ describe('topaz-app.js', function(){
       topaz.upload_picture(req, res);
     });
   });
+  
+  describe('prepare_get_user_info()', function(){
+    it('should return the correct parameters to get user info', function(done){
+      var input = {version: 'v1.3', user_id: 1, error: null};
+      var req = {params: input};
+
+      var actual = topaz.prepare_get_user_info(req);
+      actual.should.eql(input);
+
+      var bad_input = {version: 'v1.3'};
+      var bad_req = {params: bad_input};
+
+      var bad_actual = topaz.prepare_get_previews(bad_req);
+      bad_actual.error.should.not.equal(null);
+      bad_actual.error.should.not.equal(undefined);
+      bad_actual.error.error.code.should.equal(400);
+      bad_actual.error.error.msg.should.equal('PARAM_ERR');
+      done();
+    });
+  });
+  
+  describe('get_user_info()', function(){
+    var user_id;
+    var user_name;
+    var message_id;
+    var ref_user = {user_name: 'Ice Cream Boy', user_email:'icecream@boy.com', user_picture: null};
+    var new_message;
+    before(function(ready){
+      var user = {name: 'Ice Cream Boy', email:'icecream@boy.com', pass: 'vanilla'};
+      insert_dummy_user(user, function(inserted_user){
+        ref_user.user_id = inserted_user.id;
+        user_id = inserted_user.id;
+        user_name = inserted_user.name;
+        var message = {'lat': 25, 'long': 26, 'text': 'Ice Cream what else!', picture_url: null,
+          user_id: inserted_user.id, user_name: user.name, likes: 0, dislikes: 0, likeStatus: 'NONE'};
+        insert_dummy_message(message, function(inserted_message){
+          message_id = inserted_message.id;
+          new_message = inserted_message;
+          delete new_message.user_id;
+          delete new_message.likeStatus;
+          ref_user.user_messages = [new_message];
+          ready();
+        });
+      });
+    });
+    it('should return the user info and his message', function(done){
+      var req = {params: {version: 'v1.3', user_id: user_id}, session: {user_id: user_id}};
+      var res = {
+        json: function(actual){
+          var reponse = topaz.formatResponse('v1.3', 200, 'OK', ref_user);
+          actual.should.eql(reponse);
+          done();
+        }
+      };
+      topaz.get_user_info(req, res);
+    });
+  });
 });
