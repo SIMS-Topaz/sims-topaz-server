@@ -27,7 +27,9 @@ CREATE TABLE `topaz`.`users` (
   `name` TEXT NOT NULL,
   `email` TEXT NOT NULL,
   `password`  VARCHAR(40),
-  `salt`  VARCHAR(40)
+  `salt`  VARCHAR(40),
+  `picture_url` TEXT,
+  `status` TEXT
 );
 CREATE TABLE `topaz`.`test_users` LIKE `topaz`.`users`;
 
@@ -38,3 +40,23 @@ CREATE TABLE `topaz`.`votes` (
   PRIMARY KEY (`user_id`, `message_id`)
 );
 CREATE TABLE `topaz`.`test_votes` LIKE `topaz`.`votes`;
+
+CREATE TABLE `topaz`.`tags` (
+  `id` BIGINT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+  `tag` VARCHAR(20)
+);
+CREATE TABLE `topaz`.`test_tags` LIKE `topaz`.`tags`;
+
+CREATE TABLE `topaz`.`tag_link` (
+  `tag_id` BIGINT,
+  `message_id` BIGINT,
+  FOREIGN KEY (`tag_id`) REFERENCES `topaz`.`tags`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`message_id`) REFERENCES `topaz`.`messages`(`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `topaz`.`test_tag_link` (
+  `tag_id` BIGINT,
+  `message_id` BIGINT,
+  FOREIGN KEY (`tag_id`) REFERENCES `topaz`.`test_tags`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`message_id`) REFERENCES `topaz`.`test_messages`(`id`) ON DELETE CASCADE
+);

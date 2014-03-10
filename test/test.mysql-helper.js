@@ -382,4 +382,31 @@ describe('mysql-helper.js', function(){
     });
   });
 
+  describe('getUserInfo()', function(){
+    var user_id;
+    var user_name;
+    var message_id;
+    before(function(ready){
+      var user = {name: 'Beer Lady', email:'beer@lady.com', pass: 'beer'};
+      insert_dummy_user(user, function(inserted_user){
+        user_id = inserted_user.id;
+        user_name = inserted_user.name;
+        var message = {'lat': 25, 'long': 26, 'text': 'I <3 beer!',
+          user_id: inserted_user.id, user_name: user.name, likes: 0, dislikes: 0, likeStatus: 'NONE'};
+        insert_dummy_message(message, function(inserted_message){
+          message_id = inserted_message.id;
+          ready();
+        });
+      });
+    });
+    it('should return the user info and his message', function(done){
+      mysql_helper.getUserInfo(user_id, function(error, user_info){
+        (error === null).should.be.true;
+        (user_info.user_id == user_id).should.be.true;
+        (user_info.user_messages[0].id == message_id).should.be.true;
+        (user_info.user_messages[0].user_name == user_name).should.be.true;
+        done();
+      });
+    });
+  });
 });

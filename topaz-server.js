@@ -29,12 +29,15 @@ app
 .get('/api/:version/get_previews/:lat1?/:long1?/:lat2?/:long2?', topaz.get_previews)
 .get('/api/:version/get_message/:id?/:with_comments?', topaz.get_message)
 .get('/api/:version/get_comments/:message_id?', topaz.get_comments)
+.post('/api/:version/upload_picture', topaz.upload_picture)
 .post('/api/:version/post_message', topaz.post_message)
 .post('/api/:version/post_comment/:message_id?', topaz.post_comment)
 .post('/api/:version/post_like_status', topaz.post_like_status)
 .get('/api/:version/user_auth', topaz.get_user_auth)
 .post('/api/:version/user_auth', topaz.post_user_auth)
-.post('/api/:version/signup', topaz.post_signup);
+.post('/api/:version/signup', topaz.post_signup)
+.get('/api/:version/user_info/:user_id?', topaz.get_user_info)
+.post('/api/:version/user_info/:user_id?', topaz.post_user_info);
 
 http.createServer(app).listen(conf.node.http_port);
 
