@@ -468,33 +468,38 @@ var get_user_info = exports.get_user_info = function(req, res){
 
 var prepare_post_user_info = exports.prepare_post_user_info = function(req){
   var user = req.body;
-  user.user_id = req.session.user_id;
+  user.id = req.session.user_id;
 
   var rules = [
     {
-      rule: (user.user_id !== undefined),
+      rule: (user.id !== undefined),
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'user_id' parameter"
     },{
-      rule: (user.user_name !== undefined),
+      rule: (user.name !== undefined),
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'user_name' parameter"
     },{
-      rule: (user.user_status !== undefined),
+      rule: (user.status !== undefined),
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'user_status' parameter"
     },{
-      rule: (user.user_email !== undefined),
+      rule: (user.email !== undefined),
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'user_email' parameter"
+    },{
+      rule: (user.picture_url !== undefined),
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Missing 'picture_url' parameter"
     }];
-  if(user.user_password){
+  if(user.password){
     rules.push({
-      rule: (user.user_password.length >= 4),
+      rule: (user.password.length >= 4),
       code: 400,
       msg: 'PARAM_ERR',
       details: "'user_password' parameter too short"
@@ -514,11 +519,11 @@ var post_user_info = exports.post_user_info = function(req, res){
     if(prep.error !== null){
       res.json(prep.error);
     }else{
-      mysql_helper.postUserInfo(prep.user, function(error, user){
+      mysql_helper.postUserInfo(prep.user, function(error, new_user){
         if(error){
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
-          res.json(formatResponse(prep.version, 200, 'OK', user));
+          res.json(formatResponse(prep.version, 200, 'OK', new_user));
         }
       });
     }
