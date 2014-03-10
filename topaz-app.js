@@ -144,13 +144,13 @@ var get_message = exports.get_message = function(req, res){
 
 var prepare_post_message = exports.prepare_post_message = function(req){
   // curl -X POST -H "Content-Type:application/json" -H "Accept:application/json" http://localhost:8080/api/v1.1/post_message -d '{"lat":12,"long":12,"text":"Hello World"}'
+  var version = req.params.version;
   var message;
   if(version === 'v1.3')
     message = JSON.parse(req.body.request);
   else
     message = req.body;
   message.user_id = req.session.user_id;
-  var version = req.params.version;
   var rules = [
     {
       rule: message.lat !== undefined,
