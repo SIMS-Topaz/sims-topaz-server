@@ -149,12 +149,48 @@ var getComments = exports.getComments = function(message_id, callback){
   doQuery(query, params, callback);
 };
 
+var messageExists = exports.messageExists = function(message_id, callback)
+{
+  var query = 'SELECT id FROM '+message_table+' WHERE id= :message_id';
+  var params = {message_id: message_id};
+  doQuery(query, params, function(error, result){
+    var res;
+    if(error){
+      res = false;
+    }else{
+      if(result[0]) res = (result[0].id) ? true : false;
+      else res = false;
+    }
+    callback(error, res);
+  });
+};
+
 // inserts new comment
 var postComment = exports.postComment = function(comment, callback){
-  comment.date = new Date().getTime();
-  var query = 'INSERT INTO ' + comment_table + ' (`text`, `date`, `message_id`, `user_id`)'
-    + ' VALUES (:text, :date, :message_id, :user_id)';
-  doQuery(query, comment, callback);
+  messageExists(comment.message_id, function(error, exists){
+    if(error){
+      callback(error, null);
+    }else if(!exists){
+      callback(true, null);
+    }else{
+      comment.date = new Date().getTime();
+      var query = 'INSERT INTO ' + comment_table + ' (`text`, `date`, `message_id`, `user_id`)'
+        + ' VALUES (:text, :date, :message_id, :user_id)';
+      doQuery(query, comment, callback);
+    }
+  });
+};
+
+var postLikeStatus = exports.postLikeStatus = function(likeStatus, callback){
+  messageExists(likeStatus.message_id, function(error, exists){
+    if(error){
+      callback(error, null);
+    }else if(!exists){
+      callback(true, null);
+    }else{
+      doPostLikeStatus(likeStatus, callback);
+    }
+  });
 };
 
 /*
@@ -162,7 +198,7 @@ var postComment = exports.postComment = function(comment, callback){
  * @param {function} callback
  * @returns {object} {id, text, date, likes, dislikes, name}
  */
-var postLikeStatus = exports.postLikeStatus = function(likeStatus, callback){
+var doPostLikeStatus = exports.doPostLikeStatus = function(likeStatus, callback){
   var query_vote = 'SELECT `vote` FROM ' + vote_table
     + ' WHERE `message_id` = :message_id AND `user_id` = :user_id';
   var query_firstVote = function(vote){
@@ -215,6 +251,7 @@ var postLikeStatus = exports.postLikeStatus = function(likeStatus, callback){
         }else{
           var result = _.last(results);
           var final_result = (_.isArray(result)) ? result[0] : result;
+          final_result.likeStatus = likeStatus.likeStatus;
           callback(error, final_result);
         }
       });

@@ -335,7 +335,7 @@ describe('topaz-app.js', function(){
     });
     it('should return a 201 response', function(done){
       var input = {id: obj.message_id, likeStatus: 'LIKED'};
-      var ref = {id: obj.message_id, text: 'test_postLikeStatus', user_name: 'Bobugua', likes: 1, dislikes: 0, date: obj.date};
+      var ref = {id: obj.message_id, text: 'test_postLikeStatus', user_name: 'Bobugua', likes: 1, dislikes: 0, date: obj.date, likeStatus: 'LIKED'};
       var req = {params: {version: 'v1.1'}, body: input, session: {user_id: obj.user_id}};
       var res = {
         json: function(actual){
