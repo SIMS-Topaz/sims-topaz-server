@@ -193,6 +193,8 @@ describe('mysql-helper.js', function(){
           var hpass = shasum.digest('hex');
           user.password = hpass;
           user.salt = actual.salt;
+          user.picture_url = null;
+          user.status = null;
           actual.should.eql(user);
           done();
         });
