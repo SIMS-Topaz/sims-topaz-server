@@ -282,7 +282,7 @@ describe('topaz-app.js', function(){
     it('should create a user', function(done){
       var name = 'oliver_queen';
       var input = {user_name: name, user_password: 'felicity', user_email: 'oli.queen@staronline.com', version: 'v1.1'};
-      var req = {body: input};
+      var req = {body: input, 'session': {}};
       var res = {
         json: function(actual){
           (actual.error === undefined).should.be.true;
@@ -346,6 +346,20 @@ describe('topaz-app.js', function(){
         }
       };
       topaz.post_like_status(req, res);
+    });
+  });
+
+  describe('upload_picture()', function(){
+    it('should return the url of a picture', function (done){
+      var picture_path = '12345';
+      var req = {'files': {'picture': {'path': '/uploads/'+picture_path}}, 'params': {'version': 'v1.3'}, 'session': {'user_name': 'dr_no', 'user_id': 1}};
+      var res = {
+        json: function(actual){
+          actual.should.have.property('data').with.have.property('picture_url').with.equal('img/'+picture_path);
+          done();
+        }
+      };
+      topaz.upload_picture(req, res);
     });
   });
 });
