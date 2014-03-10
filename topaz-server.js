@@ -29,6 +29,7 @@ app
 .get('/api/:version/get_previews/:lat1?/:long1?/:lat2?/:long2?', topaz.get_previews)
 .get('/api/:version/get_message/:id?/:with_comments?', topaz.get_message)
 .get('/api/:version/get_comments/:message_id?', topaz.get_comments)
+.post('/api/:version/upload_picture', topaz.upload_picture)
 .post('/api/:version/post_message', topaz.post_message)
 .post('/api/:version/post_comment/:message_id?', topaz.post_comment)
 .post('/api/:version/post_like_status', topaz.post_like_status)

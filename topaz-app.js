@@ -145,11 +145,7 @@ var get_message = exports.get_message = function(req, res){
 var prepare_post_message = exports.prepare_post_message = function(req){
   // curl -X POST -H "Content-Type:application/json" -H "Accept:application/json" http://localhost:8080/api/v1.1/post_message -d '{"lat":12,"long":12,"text":"Hello World"}'
   var version = req.params.version;
-  var message;
-  if(version === 'v1.3')
-    message = JSON.parse(req.body.request);
-  else
-    message = req.body;
+  var message = req.body;
   message.user_id = req.session.user_id;
   var rules = [
     {
@@ -191,18 +187,28 @@ var post_message = exports.post_message = function(req, res){
     if(prep.error !== null){
       res.json(prep.error);
     }else{
-      if(req.files)
-        prep.message['picture_url'] = path.basename(req.files.file.path);
       mysql_helper.postMessage(prep.message, function (error, result){
         if(error){
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
           prep.message['id'] = result.insertId;
           prep.message['user_name'] = result.user_name;
-          prep.message['picture_url'] = 'img/'+prep.message['picture_url']
           res.json(formatResponse(prep.version, 201, 'Created', prep.message));
         }
       });
+    }
+  }
+};
+
+var upload_picture = exports.upload_picture = function (req, res) {
+  if(!req.session.user_id){
+    res.json(formatError(401, 'NOT_AUTH_ERR', 'User not authenticated'));
+  }else{
+    if(req.files && req.files.picture) {
+      var message = {'picture_url': 'img/'+path.basename(req.files.picture.path)};
+      res.json(formatResponse(req.params.version, 201, 'Created', message));
+    }else{
+      res.json(formatError(400, 'UPLOAD_ERR', 'An error happened during the upload'));
     }
   }
 };
