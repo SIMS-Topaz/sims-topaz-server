@@ -192,13 +192,14 @@ var post_message = exports.post_message = function(req, res){
       res.json(prep.error);
     }else{
       if(req.files)
-        prep.message['picture_url'] = 'img/'+path.basename(req.files.file.path);
+        prep.message['picture_url'] = path.basename(req.files.file.path);
       mysql_helper.postMessage(prep.message, function (error, result){
         if(error){
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
           prep.message['id'] = result.insertId;
           prep.message['user_name'] = result.user_name;
+          prep.message['picture_url'] = 'img/'+prep.message['picture_url']
           res.json(formatResponse(prep.version, 201, 'Created', prep.message));
         }
       });
