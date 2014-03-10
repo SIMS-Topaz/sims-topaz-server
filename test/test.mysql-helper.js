@@ -74,7 +74,7 @@ describe('mysql-helper.js', function(){
       var user = {name: 'Someone', email: 'someone@someone.fr', pass: 'pass'};
       insert_dummy_user(user, function(new_user){
         inserted_user = new_user;
-        var message = {'lat': 123, 'long': 456, 'text': '221B Baker Street', user_id: new_user.id};
+        var message = {'lat': 123, 'long': 456, 'text': '221B Baker Street', 'user_id': new_user.id, 'picture_url': null};
         insert_dummy_message(message, function(new_message){
           inserted_message = new_message;
           inserted_message.likes = 0;
@@ -109,8 +109,11 @@ describe('mysql-helper.js', function(){
       var user = {name: 'TestUser', email:'test@test.test', pass: 'test'};
       insert_dummy_user(user, function(inserted_user){
         var message = {'lat': 25, 'long': 26, 'text': 'Draco Dormiens Nunquam Titillandus',
-          user_id: inserted_user.id, user_name: user.name, likes: 0, dislikes: 0, likeStatus: 'NONE'};
+          'user_id': inserted_user.id, 'user_name': user.name, 'picture_url': null};
         insert_dummy_message(message, function(inserted_message){
+          inserted_message.dislikes = 0;
+          inserted_message.likes = 0;
+          inserted_message.likeStatus = 'NONE';
           mysql_helper.getMessage(inserted_message.id, inserted_user.id, function(error, actual){
             (error === null).should.be.true;
             actual.should.eql(inserted_message);
@@ -122,7 +125,7 @@ describe('mysql-helper.js', function(){
   });
 
   describe('postComment', function(){
-    describe('Comment on a not existing message', function(){
+    describe('Comment on a non existing message', function(){
       it('should return an error', function(done){
         var comment = {'text': 'hello', 'message_id': -1, 'user_id': 2};
         mysql_helper.postComment(comment, function(error, actual){

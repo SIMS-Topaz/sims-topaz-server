@@ -86,7 +86,7 @@ var doQuery = exports.doQuery = function(query, params, callback){
 // asks previews of all messages around position [lat, long]
 var getPreviews = exports.getPreviews = function(lat, long, lat2, long2, callback){
   var query = 'SELECT `messages`.`id`, LEFT(`text`, :preview_size) AS `text`,'
-    + ' `lat`, `long`, `date`, `user_id`, `name` AS `user_name`, `likes`, `dislikes`'
+    + ' `lat`, `long`, `date`, `user_id`, `name` AS `user_name`, `likes`, `dislikes`, `picture_url`'
     + ' FROM '+message_table+' AS `messages`, '+user_table+' AS `users`'
     + ' WHERE `lat` BETWEEN :min_lat AND :max_lat AND `long` BETWEEN :min_long AND :max_long'
     + ' AND `users`.`id` = `user_id`'
@@ -105,7 +105,7 @@ var getPreviews = exports.getPreviews = function(lat, long, lat2, long2, callbac
 // asks message with id 'id'
 var getMessage = exports.getMessage = function(id, user_id, callback){
   var query = 'SELECT `messages`.`id`, `text`, `lat`, `long`, `date`, `user_id`, `name` AS `user_name`, '
-    + '`likes`, `dislikes`'
+    + '`likes`, `dislikes`, `picture_url`'
     + ' FROM '+message_table+' AS `messages` LEFT JOIN '+user_table+' AS `users` ON `users`.`id`=`messages`.`user_id`'
     + ' WHERE `messages`.`id`= :id; ';
   query += 'SELECT `vote` AS `likeStatus` FROM ' + vote_table
