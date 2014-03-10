@@ -114,7 +114,7 @@ describe('topaz-app.js', function(){
     var message;
     before(function(ready){
       insert_dummy_user({name: 'Bob', email: 'bob@email.fr', pass:'a', salt:'a'}, function(user){
-        var input = {'lat': 12, 'long': 34, 'text': 'Hello World', user_id: user.id};
+        var input = {'lat': 12, 'long': 34, 'text': 'Hello World', 'user_id': user.id, 'picture_url': null};
         insert_dummy_message(input, function(inserted_message){
           message = inserted_message;
           message.likes = 0;
@@ -142,11 +142,11 @@ describe('topaz-app.js', function(){
     var ref;
     before(function(ready){
       insert_dummy_user({name: 'Bobi', email: 'bob@email.fr', pass:'a', salt:'a'}, function(user){
-        var input_message = {'lat': 12, 'long': 34, 'text': 'Hello World', user_id: user.id};
+        var input_message = {'lat': 12, 'long': 34, 'text': 'Hello World', 'user_id': user.id};
         insert_dummy_message(input_message, function(inserted_message){
           input.id = inserted_message.id;
-          req = {'params': input, session: {user_id: user.id}};
-          ref = {error: null, version: 'v1.1', id: inserted_message.id, user_id: user.id, with_comments: undefined};
+          req = {'params': input, 'session': {'user_id': user.id}};
+          ref = {'error': null, 'version': 'v1.1', 'id': inserted_message.id, 'user_id': user.id, 'with_comments': undefined};
           ready();
         });
       });
@@ -163,7 +163,7 @@ describe('topaz-app.js', function(){
     var message;
     before(function(ready){
       insert_dummy_user({name: 'Bobibob', email: 'bob@email.fr', pass:'a', salt:'a'}, function(user){
-        var input = {'lat': 98, 'long': 76, 'text': '99 Luftballons', user_id: user.id};
+        var input = {'lat': 98, 'long': 76, 'text': '99 Luftballons', 'user_id': user.id, 'picture_url': null};
         insert_dummy_message(input, function(inserted_message){
           message = inserted_message;
           message.likes = 0;
