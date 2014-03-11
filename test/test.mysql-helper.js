@@ -96,7 +96,7 @@ describe('mysql-helper.js', function(){
 
   describe('postMessage()', function(){
     it('should insert a message in the db and return an ack', function(done){
-      var message = {'lat':48,'long':15,'text':'Flynn Lives !', 'user_id': 456, 'picture_url': null};
+      var message = {'lat':48,'long':15,'text':'Flynn Lives !', 'user_id': 456, 'picture_url': null, 'tags': []};
       mysql_helper.postMessage(message, function(error, actual){
         (error === null).should.be.true;
         done();
@@ -109,7 +109,7 @@ describe('mysql-helper.js', function(){
       var user = {name: 'TestUser', email:'test@test.test', pass: 'test'};
       insert_dummy_user(user, function(inserted_user){
         var message = {'lat': 25, 'long': 26, 'text': 'Draco Dormiens Nunquam Titillandus',
-          'user_id': inserted_user.id, 'user_name': user.name, 'picture_url': null};
+          'user_id': inserted_user.id, 'user_name': user.name, 'picture_url': null, 'tags': []};
         insert_dummy_message(message, function(inserted_message){
           inserted_message.dislikes = 0;
           inserted_message.likes = 0;
@@ -362,7 +362,7 @@ describe('mysql-helper.js', function(){
     describe('message DOES exist', function(){
       var message_id;
       before(function(ready){
-        var message = {'lat':408,'long':105,'text':'Troulalilalou !', 'user_id': 1, 'picture_url': null};
+        var message = {'lat':408,'long':105,'text':'Troulalilalou !', 'user_id': 1, 'picture_url': null, 'tags': []};
         mysql_helper.postMessage(message, function(error, actual){
           (error === null).should.be.true;
           message_id = actual.insertId;
@@ -437,6 +437,28 @@ describe('mysql-helper.js', function(){
         user.should.eql(new_user);
         done();
       }); 
+    });
+  });
+
+  describe('insertTagLink()', function(){
+    var tag_id, message_id;
+    before(function(done){
+      var message = {'lat': 12, 'long': 34, 'text': "Are you goin' to Scarborough Fair?"};
+      insert_dummy_message(message, function(inserted_message){
+        message_id = inserted_message.id;
+        var query = 'INSERT INTO test_tags (`tag`) VALUES (:tag)';
+        mysql_helper.doQuery(query, {'tag': '#test'}, function(err, tag_stats){
+          tag_id = tag_stats.insertId;
+          done();
+        });
+      });
+    });
+    it('should insert a tag_link', function(done){
+      mysql_helper.insertTagLink(tag_id, message_id, function (err, stats){
+        (err === null).should.be.true;
+        stats.insertId.should.be.above(0);
+        done();
+      });
     });
   });
 });

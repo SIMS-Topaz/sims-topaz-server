@@ -163,7 +163,7 @@ describe('topaz-app.js', function(){
     var message;
     before(function(ready){
       insert_dummy_user({name: 'Bobibob', email: 'bob@email.fr', pass:'a', salt:'a'}, function(user){
-        var input = {'lat': 98, 'long': 76, 'text': '99 Luftballons', 'user_id': user.id, 'picture_url': null};
+        var input = {'lat': 98, 'long': 76, 'text': '99 Luftballons', 'user_id': user.id, 'picture_url': null, 'tags': []};
         insert_dummy_message(input, function(inserted_message){
           message = inserted_message;
           message.likes = 0;
