@@ -147,6 +147,7 @@ var prepare_post_message = exports.prepare_post_message = function(req){
   var version = req.params.version;
   var message = req.body;
   message.user_id = req.session.user_id;
+  message.picture_url = message.picture_url || null;
   var rules = [
     {
       rule: message.lat !== undefined,
