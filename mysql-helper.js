@@ -305,7 +305,8 @@ var postSignup = exports.postSignup = function(user_name, user_password, user_em
 };
 
 var getUserInfo = exports.getUserInfo = function(user_id, callback){
-  var query_user = 'SELECT `id`, `name`, `email`, `picture_url`'
+  var query_user = 'SELECT `id` AS `user_id`, `name` AS `user_name`, `email` AS `user_email`,'
+    + ' `picture_url` AS `user_picture`'
     + ' FROM '+user_table
     + ' WHERE id=:user_id; ';
   var query_messages = 'SELECT `id`, `text`, `lat`, `long`, `date`, `likes`, `dislikes`, `picture_url`'
@@ -320,9 +321,9 @@ var getUserInfo = exports.getUserInfo = function(user_id, callback){
       var user_info = (results[0]) ? results[0] : {};
       if(_.isArray(user_info)) user_info = user_info[0];
       if(!_.isEmpty(user_info)){
-        user_info.messages = (results[1]) ? results[1] : [];
-        _.each(user_info.messages, function(message){
-          message.user_name = user_info.name;
+        user_info.user_messages = (results[1]) ? results[1] : [];
+        _.each(user_info.user_messages, function(user_message){
+          user_message.user_name = user_info.user_name;
         });
       }
       callback(error, user_info);
@@ -331,9 +332,10 @@ var getUserInfo = exports.getUserInfo = function(user_id, callback){
 };
 
 var postUserInfo = exports.postUserInfo = function(new_user, callback){
-  var query_get_user = 'SELECT `password`, `email`, `picture_url`, `status`'
+  var query_get_user = 'SELECT `password` AS `user_password`, `email` AS `user_email`,'
+    + ' `picture_url` AS `usesr_picture`, `status` AS `user_status`'
     + ' FROM '+user_table
-    + ' WHERE `id`=:id';
+    + ' WHERE `id`=:user_id';
   var params_update = {};
 
   doQuery(query_get_user, new_user, function(error_get, old_user){
@@ -341,31 +343,31 @@ var postUserInfo = exports.postUserInfo = function(new_user, callback){
       callback(error_get, null);
     }else{
       old_user = old_user[0];
-      if(new_user.password){
+      if(new_user.user_password){
         var salt = crypto.pseudoRandomBytes(256);
         var shasum = crypto.createHash('sha1').update(salt);
         var hsalt = shasum.digest('hex');
         var shasum = crypto.createHash('sha1').update(hsalt+new_user.user_password);
         var hpass = shasum.digest('hex');
-        delete new_user.password;
+        delete new_user.user_password;
         params_update.password = hpass;
         params_update.salt = hsalt;
       }
-      if(new_user.email != old_user.email){
-        params_update.email = new_user.email;
+      if(new_user.user_email != old_user.user_email){
+        params_update.email = new_user.user_email;
       }
-      if(new_user.status != old_user.status){
-        params_update.status = new_user.status;
+      if(new_user.user_status != old_user.user_status){
+        params_update.status = new_user.user_status;
       }
-      if(new_user.picture_url != old_user.picture_url){
-        params_update.picture_url = new_user.picture_url;
+      if(new_user.user_picture != old_user.user_picture){
+        params_update.picture_url = new_user.user_picture;
       }
       
       var query_update = 'UPDATE '+user_table+' SET ';
       _.each(params_update, function(value, key){
         query_update += '`'+key+'`=:'+key+', ';
       });
-      params_update.user_id = new_user.id;
+      params_update.user_id = new_user.user_id;
       query_update = query_update.substring(0, query_update.length-2);
       query_update += ' WHERE `id`=:user_id';
       

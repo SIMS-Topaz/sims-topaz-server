@@ -387,12 +387,12 @@ describe('topaz-app.js', function(){
     var user_id;
     var user_name;
     var message_id;
-    var ref_user = {name: 'Ice Cream Boy', email:'icecream@boy.com', picture_url: null};
+    var ref_user = {user_name: 'Ice Cream Boy', user_email:'icecream@boy.com', user_picture: null};
     var new_message;
     before(function(ready){
       var user = {name: 'Ice Cream Boy', email:'icecream@boy.com', pass: 'vanilla'};
       insert_dummy_user(user, function(inserted_user){
-        ref_user.id = inserted_user.id;
+        ref_user.user_id = inserted_user.id;
         user_id = inserted_user.id;
         user_name = inserted_user.name;
         var message = {'lat': 25, 'long': 26, 'text': 'Ice Cream what else!', picture_url: null,
@@ -402,7 +402,7 @@ describe('topaz-app.js', function(){
           new_message = inserted_message;
           delete new_message.user_id;
           delete new_message.likeStatus;
-          ref_user.messages = [new_message];
+          ref_user.user_messages = [new_message];
           ready();
         });
       });
@@ -422,17 +422,18 @@ describe('topaz-app.js', function(){
   
   describe('prepare_post_user_info()', function(){
     it('should return the correct parameters to post new user info', function(done){
-      var input = {id: 1, name: 'Lanky Kong', status: 'clown', email: 'lanky@kong.fr',
-        password: 'banana', picture_url: 'bla/bla.jpg'};
-      var req = {'body': input, 'params': {'version': 'v1.3'}, session: {user_id: input.id}};
+      var input = {user_id: 1, user_name: 'Lanky Kong', user_status: 'clown',
+        user_email: 'lanky@kong.fr', user_password: 'banana', user_picture: 'bla/bla.jpg'};
+      var req = {'body': input, 'params': {'version': 'v1.3'}, session: {user_id: input.user_id}};
 
       var actual = topaz.prepare_post_user_info(req);
       (actual.user).should.eql(input);
       (actual.error === null).should.be.true;
       (actual.version === req.params.version).should.be.true;
       
-      var bad_input = {id: 1, name: 'Lanky Kong', email: 'lanky@kong.fr', password: 'banana'};
-      var bad_req = {'body': bad_input, 'params': {'version': 'v1.3'}, session: {user_id: input.id}};
+      var bad_input = {user_id: 1, user_name: 'Lanky Kong', user_email: 'lanky@kong.fr',
+        user_password: 'banana'};
+      var bad_req = {'body': bad_input, 'params': {'version': 'v1.3'}, session: {user_id: bad_input.user_id}};
 
       var bad_actual = topaz.prepare_post_user_info(bad_req);
       bad_actual.error.should.not.equal(null);
@@ -452,15 +453,15 @@ describe('topaz-app.js', function(){
       });
     });
     it('should post new info', function(done){
-      old_user.picture_url = 'DK/avatar.jpg';
+      /*old_user.picture_url = 'DK/avatar.jpg';
       old_user.password = old_user.pass;
       old_user.status = 'Hungry';
       delete old_user.pass;
-      delete old_user.salt;
-      var new_user = {id: old_user.id, name: 'Donkey Kong', email: 'kong@donkey.fr', password: 'watermelon',
-        status: 'Asleep', picture_url: 'DK/new_avatar.jpg'};
+      delete old_user.salt;*/
+      var new_user = {user_id: old_user.id, user_name: old_user.name, user_email: 'kong@donkey.fr',
+        user_password: 'watermelon', user_status: 'Asleep', user_picture: 'DK/new_avatar.jpg'};
       
-      var req = {params: {version: 'v1.3'}, body: new_user, session: {user_id: new_user.id}};
+      var req = {params: {version: 'v1.3'}, body: new_user, session: {user_id: new_user.user_id}};
       var res = {
         json: function(actual){
           var reponse = topaz.formatResponse('v1.3', 200, 'OK', new_user);
