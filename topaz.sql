@@ -47,14 +47,16 @@ CREATE TABLE `topaz`.`tags` (
 );
 CREATE TABLE `topaz`.`test_tags` LIKE `topaz`.`tags`;
 
-CREATE TABLE `topaz`.`tag_link` (
+CREATE TABLE `topaz`.`tag_links` (
+  `id` BIGINT AUTO_INCREMENT NOT NULL PRIMARY KEY,
   `tag_id` BIGINT,
   `message_id` BIGINT,
   FOREIGN KEY (`tag_id`) REFERENCES `topaz`.`tags`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`message_id`) REFERENCES `topaz`.`messages`(`id`) ON DELETE CASCADE
 );
 
-CREATE TABLE `topaz`.`test_tag_link` (
+CREATE TABLE `topaz`.`test_tag_links` (
+  `id` BIGINT AUTO_INCREMENT NOT NULL PRIMARY KEY,
   `tag_id` BIGINT,
   `message_id` BIGINT,
   FOREIGN KEY (`tag_id`) REFERENCES `topaz`.`test_tags`(`id`) ON DELETE CASCADE,

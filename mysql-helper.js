@@ -1,17 +1,18 @@
-/***************************************************************************
-mysql-helper:
-communique avec la DB topaz
-**************************************************************************/
-
 var crypto = require('crypto');
-var conf  = require('./conf.js');
-var mysql = require('mysql');
+
 var _     = require('underscore');
+var mysql = require('mysql');
+var async = require('async');
+
+var conf  = require('./conf.js');
+
 var client;
 var comment_table = (process.env.NODE_ENV==='test')?'test_comments':'comments';
 var message_table = (process.env.NODE_ENV==='test')?'test_messages':'messages';
 var user_table = (process.env.NODE_ENV==='test')?'test_users':'users';
 var vote_table = (process.env.NODE_ENV==='test')?'test_votes':'votes';
+var tag_table = (process.env.NODE_ENV==='test')?'test_tags':'tags';
+var tag_link_table = (process.env.NODE_ENV==='test')?'test_tag_links':'tag_links';
 
 var openConnection = exports.openConnection = function(){
   client = mysql.createConnection(conf.mysql);
@@ -104,23 +105,43 @@ var getPreviews = exports.getPreviews = function(lat, long, lat2, long2, callbac
 
 // asks message with id 'id'
 var getMessage = exports.getMessage = function(id, user_id, callback){
-  var query = 'SELECT `messages`.`id`, `text`, `lat`, `long`, `date`, `user_id`, `name` AS `user_name`, '
-    + '`likes`, `dislikes`, `messages`.`picture_url` AS `picture_url`'
-    + ' FROM '+message_table+' AS `messages` LEFT JOIN '+user_table+' AS `users` ON `users`.`id`=`messages`.`user_id`'
-    + ' WHERE `messages`.`id`= :id; ';
-  query += 'SELECT `vote` AS `likeStatus` FROM ' + vote_table
-    + ' WHERE `message_id` = :id AND `user_id` = :user_id';
-  var params = {id: id, user_id: user_id};
-  doQuery(query, params, function(error, results){
+  async.parallel({
+    message:function(cb){
+      var query = 'SELECT `messages`.`id`, `text`, `lat`, `long`, `date`, `user_id`, `name` AS `user_name`, '
+        + '`likes`, `dislikes`, `messages`.`picture_url` AS `picture_url`'
+        + ' FROM '+message_table+' AS `messages` LEFT JOIN '+user_table+' AS `users` ON `users`.`id`=`messages`.`user_id`'
+        + ' WHERE `messages`.`id`= :id; ';
+      query += 'SELECT `vote` AS `likeStatus` FROM ' + vote_table
+        + ' WHERE `message_id` = :id AND `user_id` = :user_id';
+      var params = {id: id, user_id: user_id};
+      doQuery(query, params, function(error, results){
+        cb(error, results);
+      });
+    },
+    tags:function(cb){
+      var query = 'SELECT `tag` FROM `tag_links` RIGHT JOIN `tags` ON `tags`.`id`=`tag_id` WHERE `message_id`=:message_id';
+      doQuery(query, {'message_id': id}, function(err, results){
+        cb(err, _.pluck(results, ['tag']));
+      });
+    }
+  }, function(error, data){
     if(error){
       callback(error, null);
     }else{
-      results = _.flatten(results);
+      var results = _.flatten(data.message);
       var final_result = _.extend(results[0], results[1]);
       final_result.likeStatus = final_result.likeStatus || 'NONE';
       final_result = (error===null) ? final_result || null : null;
-      callback(error, final_result);
+      final_result.tags = data.tags;
+      callback(null, final_result);
     }
+  });
+};
+
+var insertTagLink = exports.insertTagLink = function(tag_id, message_id, callback){
+  var query = 'INSERT INTO '+tag_link_table+' (`tag_id`, `message_id`) VALUES (:tag_id, :message_id);';
+  doQuery(query, {'tag_id': tag_id, 'message_id': message_id}, function(err, stats){
+    callback(err, stats);
   });
 };
 
@@ -129,13 +150,30 @@ var postMessage = exports.postMessage = function(message, callback){
   message.date = new Date().getTime();
   var query = 'INSERT INTO '+message_table+' (`text`, `lat`, `long`, `date`, `user_id`, `picture_url`)'
     + ' VALUES (:text, :lat, :long, :date, :user_id, :picture_url); ';
-  query += 'SELECT `name` AS `user_name` FROM '+user_table+' WHERE `id` = :user_id; ';
-  doQuery(query, message, function(error, results){
+  doQuery(query, message, function(error, message_stats){
     if(error){
       callback(error, null);
     }else{
-      results = _.flatten(results);
-      callback(error, _.extend(results[0], results[1]));
+      async.eachSeries(message.tags, function(tag, cb){
+        var query = 'SELECT `id` FROM '+tag_table+' WHERE `tag` = :tag';
+        doQuery(query, {'tag': tag}, function(err, results){
+          var result = results[0] || null;
+          if(result){
+            insertTagLink(result.id, message_stats.insertId, function (err, stats){
+              cb(err);
+            });
+          }else{
+            var query = 'INSERT INTO '+tag_table+' (`tag`) VALUES (:tag)';
+            doQuery(query, {'tag': tag}, function(err, tag_stats){
+              insertTagLink(tag_stats.insertId, message_stats.insertId, function (err, stats){
+                cb(err);
+              });
+            });
+          }
+        });
+      }, function(err){
+        callback(err || null, message_stats);
+      });
     }
   });
 };
@@ -376,4 +414,5 @@ var postUserInfo = exports.postUserInfo = function(new_user, callback){
       });
     }
   });
+
 };

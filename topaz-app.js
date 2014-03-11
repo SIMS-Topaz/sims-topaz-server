@@ -148,6 +148,7 @@ var prepare_post_message = exports.prepare_post_message = function(req){
   var message = req.body;
   message.user_id = req.session.user_id;
   message.picture_url = message.picture_url || null;
+  message.tags = message.tags || [];
   var rules = [
     {
       rule: message.lat !== undefined,
@@ -193,7 +194,7 @@ var post_message = exports.post_message = function(req, res){
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
           prep.message['id'] = result.insertId;
-          prep.message['user_name'] = result.user_name;
+          prep.message['user_name'] = req.session.user_name;
           res.json(formatResponse(prep.version, 201, 'Created', prep.message));
         }
       });
