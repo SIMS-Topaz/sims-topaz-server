@@ -469,38 +469,43 @@ var get_user_info = exports.get_user_info = function(req, res){
 
 var prepare_post_user_info = exports.prepare_post_user_info = function(req){
   var user = req.body;
-  user.id = req.session.user_id;
+  //user.id = req.session.user_id;
 
   var rules = [
     {
-      rule: (user.id !== undefined),
+      rule: (user.user_id === req.session.user_id),
+      code: 401,
+      msg: 'NOT_AUTH_ERR',
+      details: "User not authenticated"
+    },{
+      rule: (user.user_id !== undefined),
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'user_id' parameter"
     },{
-      rule: (user.name !== undefined),
+      rule: (user.user_name !== undefined),
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'user_name' parameter"
     },{
-      rule: (user.status !== undefined),
+      rule: (user.user_status !== undefined),
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'user_status' parameter"
     },{
-      rule: (user.email !== undefined),
+      rule: (user.user_email !== undefined),
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'user_email' parameter"
     },{
-      rule: (user.picture_url !== undefined),
+      rule: (user.user_picture !== undefined),
       code: 400,
       msg: 'PARAM_ERR',
       details: "Missing 'picture_url' parameter"
     }];
-  if(user.password){
+  if(user.user_password){
     rules.push({
-      rule: (user.password.length >= 4),
+      rule: (user.user_password.length >= 4),
       code: 400,
       msg: 'PARAM_ERR',
       details: "'user_password' parameter too short"

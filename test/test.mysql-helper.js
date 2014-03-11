@@ -407,9 +407,9 @@ describe('mysql-helper.js', function(){
     it('should return the user info and his message', function(done){
       mysql_helper.getUserInfo(user_id, function(error, user_info){
         (error === null).should.be.true;
-        (user_info.id == user_id).should.be.true;
-        (user_info.messages[0].id == message_id).should.be.true;
-        (user_info.messages[0].user_name == user_name).should.be.true;
+        (user_info.user_id == user_id).should.be.true;
+        (user_info.user_messages[0].id == message_id).should.be.true;
+        (user_info.user_messages[0].user_name == user_name).should.be.true;
         
         done();
       });
@@ -417,7 +417,7 @@ describe('mysql-helper.js', function(){
   });
   
   describe('postUserInfo()', function(){
-    var old_user = {name: 'Donkey Kong', email: 'donkey@kong.fr', pass: 'banana'};
+    var old_user = {name: 'Chunky Kong', email: 'chunky@kong.fr', pass: 'banana'};
     before(function(ready){
       insert_dummy_user(old_user, function(inserted_user){
         old_user.id = inserted_user.id;
@@ -425,13 +425,13 @@ describe('mysql-helper.js', function(){
       });
     });
     it('should post new info', function(done){
-      old_user.picture_url = 'DK/avatar.jpg';
+      /*old_user.picture_url = 'DK/avatar.jpg';
       old_user.password = old_user.pass;
       old_user.status = 'Hungry';
       delete old_user.pass;
-      delete old_user.salt;
-      var new_user = {id: old_user.id, name: 'Donkey Kong', email: 'kong@donkey.fr', password: 'watermelon',
-        status: 'Asleep', picture_url: 'DK/new_avatar.jpg'};
+      delete old_user.salt;*/
+      var new_user = {user_id: old_user.id, user_name: old_user.name, user_email: 'kong@chunky.fr',
+        user_password: 'watermelon', user_status: 'Asleep', user_picture: 'DK/new_avatar.jpg'};
       mysql_helper.postUserInfo(new_user, function(error, user){
         (error === null).should.be.true;
         user.should.eql(new_user);
