@@ -64,7 +64,7 @@ var prepare_get_previews = exports.prepare_get_previews = function(req){
   ];
   if(by_tag !== undefined){
     var body = req.body || {};
-    tag = body.tag;
+    tag = req.query.tag;
     rules.push({
       rule: by_tag == 'BY_TAG',
       code: 400,
@@ -85,7 +85,7 @@ var prepare_get_previews = exports.prepare_get_previews = function(req){
   long2 = parseFloat(long2);
 
   return {'error': error, 'version': version, 'lat1': lat1, 'long1': long1, 'lat2': lat2,
-    'long2': long2, 'tag': tag};
+    'long2': long2, 'tag': '#'+tag};
 };
 
 var get_previews = exports.get_previews = function(req, res){
