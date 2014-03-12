@@ -46,7 +46,9 @@ var insert_dummy_user = function(params, callback){
 //Actual tests
 describe('topaz-app.js', function(){
   after(function(done){
-    mysql_helper.doQuery("DELETE FROM `test_messages`; DELETE FROM `test_users`;", {}, function(error, results){
+    var query = 'DELETE FROM `test_messages`; DELETE FROM `test_users`; '
+      + 'DELETE FROM `test_comments`; DELETE FROM `test_votes`; DELETE FROM test_tags; ';
+    mysql_helper.doQuery(query, {}, function(error, results){
       mysql_helper.closeConnection();
       done();
     });
@@ -90,50 +92,113 @@ describe('topaz-app.js', function(){
   });
 
   describe('prepare_get_previews()', function(){
-    it('should return the correct parameters to get previews', function(done){
-      var input = {'version': 'v1.1', 'lat1': 12, 'lat2': 34, 'long1': 56, 'long2': 78};
-      var req = {'params': input};
+    describe('without tag', function(){
+      it('should return the correct parameters to get previews', function(done){
+        var input = {'version': 'v1.1', 'lat1': 12, 'lat2': 34, 'long1': 56, 'long2': 78};
+        var req = {'params': input};
 
-      var actual = topaz.prepare_get_previews(req);
-      input.error = null;
-      actual.should.eql(input);
+        var actual = topaz.prepare_get_previews(req);
+        input.error = null;
+        delete actual.tag;
+        actual.should.eql(input);
 
-      var input = {'version': 'v1.1', 'lat1': 12, 'lat2': 34};
-      var req = {'params': input};
+        var input = {'version': 'v1.1', 'lat1': 12, 'lat2': 34};
+        var req = {'params': input};
 
-      var actual = topaz.prepare_get_previews(req);
-      actual.error.should.not.equal(null);
-      actual.error.should.not.equal(undefined);
-      actual.error.error.code.should.equal(400);
-      actual.error.error.msg.should.equal('PARAM_ERR');
-      done();
+        var actual = topaz.prepare_get_previews(req);
+        actual.error.should.not.equal(null);
+        actual.error.should.not.equal(undefined);
+        actual.error.error.code.should.equal(400);
+        actual.error.error.msg.should.equal('PARAM_ERR');
+        done();
+      });
+    });
+    
+    describe('with tag', function(){
+      it('should still work!', function(done){
+        var input = {'version': 'v1.3', 'lat1': 12, 'lat2': 34, 'long1': 56, 'long2': 78,
+          'by_tag': 'BY_TAG'};
+        var req = {'params': input, 'body': {tag: '#tag'}};
+
+        var actual = topaz.prepare_get_previews(req);
+        input.error = null;
+        delete input.by_tag;
+        input.tag = req.body.tag;
+        actual.should.eql(input);
+
+        var bad_input = {'version': 'v1.1', 'lat1': 12, 'lat2': 34};
+        var bad_req = {'params': bad_input};
+
+        var bad_actual = topaz.prepare_get_previews(bad_req);
+        bad_actual.error.should.not.equal(null);
+        bad_actual.error.should.not.equal(undefined);
+        bad_actual.error.error.code.should.equal(400);
+        bad_actual.error.error.msg.should.equal('PARAM_ERR');
+        done();
+      });
     });
   });
 
   describe('get_previews()', function(){
-    var message;
-    before(function(ready){
-      insert_dummy_user({name: 'Bob', email: 'bob@email.fr', pass:'a', salt:'a'}, function(user){
-        var input = {'lat': 12, 'long': 34, 'text': 'Hello World', 'user_id': user.id, 'picture_url': null};
-        insert_dummy_message(input, function(inserted_message){
-          message = inserted_message;
-          message.likes = 0;
-          message.dislikes = 0;
-          message.user_name = user.name;
-          ready();
+    describe('standard use', function(){
+      var message;
+      before(function(ready){
+        insert_dummy_user({name: 'Bob', email: 'bob@email.fr', pass:'a', salt:'a'}, function(user){
+          var input = {'lat': 12, 'long': 34, 'text': 'Hello World', 'user_id': user.id, 'picture_url': null};
+          insert_dummy_message(input, function(inserted_message){
+            message = inserted_message;
+            message.likes = 0;
+            message.dislikes = 0;
+            message.user_name = user.name;
+            ready();
+          });
         });
       });
+      it('should return a formatted list of previews', function(done){
+        var req = {'params': {'lat1': 11, 'lat2': 13, 'long1': 33, 'long2': 35, 'version': 'v1.3'},
+          session: {user_id: 1}};
+        var res = {'json': function(object){
+          message.tags = [];
+          object.success.should.not.equal(undefined);
+          object.data.should.includeEql(message);
+          done();
+        }};
+        topaz.get_previews(req, res);
+      });
     });
-    it('should return a formatted list of previews', function(done){
-      var req = {'params': {'lat1': 11, 'lat2': 13, 'long1': 33, 'long2': 35},
-        session: {user_id: 1}};
-      var res = {'json': function(object){
-        object.success.should.not.equal(undefined);
-        object.data.should.includeEql(message);
-        done();
-      }};
-      topaz.get_previews(req, res);
-    });
+    describe('by tag research', function(){
+      var message;
+      before(function(ready){
+        insert_dummy_user({name: 'Bobybob', email: 'bob@email.fr', pass:'a', salt:'a'}, function(user){
+          var input = {'lat': 12, 'long': 34, 'text': 'Hello World', 'user_id': user.id, 'picture_url': null};
+          insert_dummy_message(input, function(inserted_message){
+            message = inserted_message;
+            message.likes = 0;
+            message.dislikes = 0;
+            message.user_name = user.name;
+            var query = 'INSERT INTO test_tags (`tag`) VALUES (:tag)';
+            mysql_helper.doQuery(query, {'tag': '#tagtag'}, function(err, tag_stats){
+              mysql_helper.insertTagLink(tag_stats.insertId, inserted_message.id, function(error, result){
+                ready();
+              });
+            });
+          });
+        });
+      });
+      it('should return a formatted list of previews filtered by tag', function(done){
+        var req = {'params': {'lat1': 11, 'lat2': 13, 'long1': 33, 'long2': 35, 'by_tag': 'BY_TAG',
+          'version': 'v1.3'},
+          'session': {user_id: 1},
+          'body': {tag: '#tagtag'}};
+        var res = {'json': function(object){
+          message.tags = ['#tagtag'];
+          object.success.should.not.equal(undefined);
+          object.data.should.includeEql(message);
+          done();
+        }};
+        topaz.get_previews(req, res);
+      });
+    });    
   });
 
   describe('prepare_get_message()', function(){
@@ -411,6 +476,7 @@ describe('topaz-app.js', function(){
       var req = {params: {version: 'v1.3', user_id: user_id}, session: {user_id: user_id}};
       var res = {
         json: function(actual){
+          ref_user.user_status = null;
           var reponse = topaz.formatResponse('v1.3', 200, 'OK', ref_user);
           actual.should.eql(reponse);
           done();

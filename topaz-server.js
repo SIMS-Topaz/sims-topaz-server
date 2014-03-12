@@ -26,7 +26,7 @@ app
 }))
 .use('/img', express.static(__dirname + '/uploads'))
 .get('/', topaz.get_index)
-.get('/api/:version/get_previews/:lat1?/:long1?/:lat2?/:long2?', topaz.get_previews)
+.get('/api/:version/get_previews/:lat1?/:long1?/:lat2?/:long2?/:by_tag?', topaz.get_previews)
 .get('/api/:version/get_message/:id?/:with_comments?', topaz.get_message)
 .get('/api/:version/get_comments/:message_id?', topaz.get_comments)
 .post('/api/:version/upload_picture', topaz.upload_picture)

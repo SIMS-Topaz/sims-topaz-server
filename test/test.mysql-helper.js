@@ -47,15 +47,7 @@ var insert_dummy_user = function(params, callback){
 };
 
 //Actual tests
-describe('mysql-helper.js', function(){
-  before(function(ready){
-    var delete_all = 'DELETE FROM `test_messages`; DELETE FROM `test_users`; '
-      + 'DELETE FROM `test_comments`; DELETE FROM `test_votes`;';
-    mysql_helper.doQuery(delete_all, {}, function(error, results){
-      ready();
-    });
-  });
-  
+describe('mysql-helper.js', function(){  
   describe('doQuery()', function(){
     it('should do a query', function(done){
       var query = 'SHOW STATUS';
@@ -68,28 +60,63 @@ describe('mysql-helper.js', function(){
   });
 
   describe('getPreviews()', function(){
-    var inserted_user;
-    var inserted_message;
-    before(function(done){
-      var user = {name: 'Someone', email: 'someone@someone.fr', pass: 'pass'};
-      insert_dummy_user(user, function(new_user){
-        inserted_user = new_user;
-        var message = {'lat': 123, 'long': 456, 'text': '221B Baker Street', 'user_id': new_user.id, 'picture_url': null};
-        insert_dummy_message(message, function(new_message){
-          inserted_message = new_message;
-          inserted_message.likes = 0;
-          inserted_message.dislikes = 0;
-          inserted_message.user_name = user.name;
+    describe('standard use', function(){
+      var inserted_user;
+      var inserted_message;
+      before(function(done){
+        var user = {name: 'Someone', email: 'someone@someone.fr', pass: 'pass'};
+        insert_dummy_user(user, function(new_user){
+          inserted_user = new_user;
+          var message = {'lat': 123, 'long': 456, 'text': '221B Baker Street', 'user_id': new_user.id, 'picture_url': null};
+          insert_dummy_message(message, function(new_message){
+            inserted_message = new_message;
+            inserted_message.likes = 0;
+            inserted_message.dislikes = 0;
+            inserted_message.user_name = user.name;
+            done();
+          });
+        });
+      });
+      it('should return a list containing previews', function(done){
+        mysql_helper.getPreviews(122, 455, 124, 457, null, function(error, actual){
+          inserted_message.tags = [];
+          (error === null).should.be.true;
+          actual.length.should.be.above(0);
+          actual.should.includeEql(inserted_message);
           done();
         });
       });
     });
-    it('should return a list containing previews', function(done){
-      mysql_helper.getPreviews(122, 455, 124, 457, function(error, actual){
-        (error === null).should.be.true;
-        actual.length.should.be.above(0);
-        actual.should.includeEql(inserted_message);
-        done();
+    describe('by tag research', function(){
+      var inserted_user;
+      var inserted_message;
+      before(function(done){
+        var user = {name: 'SomeoneElse', email: 'someone@someone.fr', pass: 'pass'};
+        insert_dummy_user(user, function(new_user){
+          inserted_user = new_user;
+          var message = {'lat': 123, 'long': 456, 'text': '221B Baker Street', 'user_id': new_user.id, 'picture_url': null};
+          insert_dummy_message(message, function(new_message){
+            inserted_message = new_message;
+            inserted_message.likes = 0;
+            inserted_message.dislikes = 0;
+            inserted_message.user_name = user.name;
+            var query = 'INSERT INTO test_tags (`tag`) VALUES (:tag)';
+            mysql_helper.doQuery(query, {'tag': '#by_tag_previews'}, function(err, tag_stats){
+              mysql_helper.insertTagLink(tag_stats.insertId, new_message.id, function(error, result){
+                done();
+              });
+            });
+          });
+        });
+      });
+      it('should return a list containing previews filtered by tag', function(done){
+        mysql_helper.getPreviews(122, 455, 124, 457, '#by_tag_previews', function(error, actual){
+          inserted_message.tags = ['#by_tag_previews'];
+          (error === null).should.be.true;
+          actual.length.should.be.above(0);
+          actual.should.includeEql(inserted_message);
+          done();
+        });
       });
     });
   });
