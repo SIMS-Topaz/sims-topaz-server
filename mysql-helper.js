@@ -7,12 +7,21 @@ var async = require('async');
 var conf  = require('./conf.js');
 
 var client;
-var comment_table = (process.env.NODE_ENV==='test')?'test_comments':'comments';
-var message_table = (process.env.NODE_ENV==='test')?'test_messages':'messages';
-var user_table = (process.env.NODE_ENV==='test')?'test_users':'users';
-var vote_table = (process.env.NODE_ENV==='test')?'test_votes':'votes';
-var tag_table = (process.env.NODE_ENV==='test')?'test_tags':'tags';
-var tag_link_table = (process.env.NODE_ENV==='test')?'test_tag_links':'tag_links';
+var comment_table  = 'comments';
+var message_table  = 'messages';
+var user_table     = 'users';
+var vote_table     = 'votes';
+var tag_table      = 'tags';
+var tag_link_table = 'tag_links';
+
+if(process.env.NODE_ENV==='test'){
+  comment_table  = 'test_comments';
+  message_table  = 'test_messages';
+  user_table     = 'test_users';
+  vote_table     = 'test_votes';
+  tag_table      = 'test_tags';
+  tag_link_table = 'test_tag_links';
+}
 
 var openConnection = exports.openConnection = function(){
   client = mysql.createConnection(conf.mysql);
@@ -77,30 +86,67 @@ var handleDisconnect = exports.handleDisconnect = function(){
 };
 
 // does request 'query' and call 'callback' with the query's result
-var doQuery = exports.doQuery = function(query, params, callback){
-  client.query(query, params, function(error, results){
+var doQuery = exports.doQuery = function(query, params, callback, print){
+  var q = client.query(query, params, function(error, results){
     if(error) console.error(error);
     callback(error, results);
   });
+  if(print) console.log(q.sql);
 };
 
 // asks previews of all messages around position [lat, long]
-var getPreviews = exports.getPreviews = function(lat, long, lat2, long2, callback){
-  var query = 'SELECT `messages`.`id`, LEFT(`text`, :preview_size) AS `text`,'
-    + ' `lat`, `long`, `date`, `user_id`, `name` AS `user_name`, `likes`, `dislikes`, `messages`.`picture_url` AS `picture_url`'
-    + ' FROM '+message_table+' AS `messages`, '+user_table+' AS `users`'
-    + ' WHERE `lat` BETWEEN :min_lat AND :max_lat AND `long` BETWEEN :min_long AND :max_long'
-    + ' AND `users`.`id` = `user_id`'
-    + ' ORDER BY `messages`.`id` DESC LIMIT 1000';
+var getPreviews = exports.getPreviews = function(lat, long, lat2, long2, tag, callback){
+  var sub_query_select_from = 'SELECT `messages`.`id`, LEFT(`text`, 50) AS `text`,'
+    + ' `lat`, `long`, `date`, `user_id`, `name` AS `user_name`, `likes`, `dislikes`,'
+    + ' `messages`.`picture_url` AS `picture_url`'
+    + ' FROM '+message_table+' AS `messages`, '+user_table+' AS `users`';
+  var sub_query_where = ' WHERE ';
+  var sub_query_order = ' ORDER BY `messages`.`id` DESC LIMIT 1000';
+
+  var query_select_from = 'SELECT `info`.*, group_concat(`tags`.`tag` SEPARATOR ";") AS `tag` FROM';
+  var query_join = ' LEFT JOIN '+tag_link_table+' AS `links` ON `links`.`message_id` = `info`.`id`'
+    + ' LEFT JOIN '+tag_table+' AS `tags` ON `tags`.`id` = `links`.`tag_id`';
+  var query_group = ' GROUP BY `info`.`id`';
+
+  if(tag){
+    var tag_id = 'SELECT `_tags`.`id` FROM '+tag_table+' AS `_tags` WHERE `_tags`.`tag` = :tag';
+    var tagged_messages = 'SELECT `tag_links`.`message_id`'
+      + ' FROM '+tag_link_table+' AS `tag_links`'
+      + ' WHERE `tag_links`.`tag_id` = ( '+tag_id+' )';
+    sub_query_where += '`messages`.`id` IN ( '+tagged_messages+' ) AND ';
+  }
+  sub_query_where += '`lat` BETWEEN :min_lat AND :max_lat AND `long` BETWEEN :min_long AND :max_long'
+    + ' AND `users`.`id` = `user_id`';
+
+  var sub_query = sub_query_select_from
+    + sub_query_where
+    + sub_query_order;
+
+  var query = query_select_from
+    + ' ( '+sub_query+' ) AS info'
+    + query_join
+    + query_group;
+    
   var params = {
     preview_size : conf.PREVIEW_SIZE,
     min_lat      : lat,
     max_lat      : lat2,
     min_long     : long,
-    max_long     : long2
+    max_long     : long2,
+    tag          : tag
   };
-  
-  doQuery(query, params, callback);
+
+  doQuery(query, params, function(error, messages){
+    if(error){
+      callback(error, null);
+    }else{
+      _.each(messages, function(message){
+        message.tags = (message.tag) ? message.tag.split(';') : [];
+        delete message.tag;
+      });
+      callback(error, messages);
+    }
+  });
 };
 
 // asks message with id 'id'
@@ -344,7 +390,7 @@ var postSignup = exports.postSignup = function(user_name, user_password, user_em
 
 var getUserInfo = exports.getUserInfo = function(user_id, callback){
   var query_user = 'SELECT `id` AS `user_id`, `name` AS `user_name`, `email` AS `user_email`,'
-    + ' `picture_url` AS `user_picture`'
+    + ' `picture_url` AS `user_picture`, `status` AS `user_status`'
     + ' FROM '+user_table
     + ' WHERE id=:user_id; ';
   var query_messages = 'SELECT `id`, `text`, `lat`, `long`, `date`, `likes`, `dislikes`, `picture_url`'
@@ -371,7 +417,7 @@ var getUserInfo = exports.getUserInfo = function(user_id, callback){
 
 var postUserInfo = exports.postUserInfo = function(new_user, callback){
   var query_get_user = 'SELECT `password` AS `user_password`, `email` AS `user_email`,'
-    + ' `picture_url` AS `usesr_picture`, `status` AS `user_status`'
+    + ' `picture_url` AS `usesr_picture`, `status` AS `user_status`, `name` AS `user_name`'
     + ' FROM '+user_table
     + ' WHERE `id`=:user_id';
   var params_update = {};
@@ -381,6 +427,9 @@ var postUserInfo = exports.postUserInfo = function(new_user, callback){
       callback(error_get, null);
     }else{
       old_user = old_user[0];
+      if(new_user.user_name != old_user.user_name){
+        params_update.name = new_user.user_name;
+      }
       if(new_user.user_password){
         var salt = crypto.pseudoRandomBytes(256);
         var shasum = crypto.createHash('sha1').update(salt);

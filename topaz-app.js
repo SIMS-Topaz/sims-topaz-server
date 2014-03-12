@@ -16,6 +16,8 @@ var prepare_get_previews = exports.prepare_get_previews = function(req){
   var lat2 = req.params.lat2;
   var long1 = req.params.long1;
   var long2 = req.params.long2;
+  var by_tag = req.params.by_tag;
+  var tag;
 
   var rules = [
     {
@@ -60,6 +62,21 @@ var prepare_get_previews = exports.prepare_get_previews = function(req){
       details: "Invalid 'long2' parameter"
     }
   ];
+  if(by_tag !== undefined){
+    var body = req.body || {};
+    tag = body.tag;
+    rules.push({
+      rule: by_tag == 'BY_TAG',
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Invalid 'by_tag' parameter"
+    },{
+      rule: tag !== undefined,
+      code: 400,
+      msg: 'PARAM_ERR',
+      details: "Missing 'tag' parameter"
+    });
+  }
   
   var error = handleError(rules);
   lat1  = parseFloat(lat1);
@@ -67,7 +84,8 @@ var prepare_get_previews = exports.prepare_get_previews = function(req){
   lat2  = parseFloat(lat2);
   long2 = parseFloat(long2);
 
-  return {'error': error, 'version': version, 'lat1': lat1, 'long1': long1, 'lat2': lat2, 'long2': long2};
+  return {'error': error, 'version': version, 'lat1': lat1, 'long1': long1, 'lat2': lat2,
+    'long2': long2, 'tag': tag};
 };
 
 var get_previews = exports.get_previews = function(req, res){
@@ -78,7 +96,7 @@ var get_previews = exports.get_previews = function(req, res){
     if(prep.error !== null){
       res.json(prep.error);
     }else{
-      mysql_helper.getPreviews(prep.lat1, prep.long1, prep.lat2, prep.long2, function (error, results) {
+      mysql_helper.getPreviews(prep.lat1, prep.long1, prep.lat2, prep.long2, prep.tag, function (error, results) {
         if(error){
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
