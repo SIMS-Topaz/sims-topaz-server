@@ -458,7 +458,7 @@ describe('mysql-helper.js', function(){
       delete old_user.pass;
       delete old_user.salt;*/
       var new_user = {user_id: old_user.id, user_name: old_user.name, user_email: 'kong@chunky.fr',
-        user_password: 'watermelon', user_status: 'Asleep', user_picture: 'DK/new_avatar.jpg'};
+        user_status: 'Asleep', user_picture: 'DK/new_avatar.jpg'};
       mysql_helper.postUserInfo(new_user, function(error, user){
         (error === null).should.be.true;
         user.should.eql(new_user);

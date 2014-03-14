@@ -259,7 +259,7 @@ var postComment = exports.postComment = function(comment, callback){
     if(error){
       callback(error, null);
     }else if(!exists){
-      callback(true, null);
+      callback('MSG_ERR', null);
     }else{
       comment.date = new Date().getTime();
       var query = 'INSERT INTO ' + comment_table + ' (`text`, `date`, `message_id`, `user_id`)'
@@ -420,7 +420,7 @@ var getUserInfo = exports.getUserInfo = function(user_id, callback){
 };
 
 var postUserInfo = exports.postUserInfo = function(new_user, callback){
-  var query_get_user = 'SELECT `password` AS `user_password`, `email` AS `user_email`,'
+  var query_get_user = 'SELECT `password` AS `user_password`, `salt`, `email` AS `user_email`,'
     + ' `picture_url` AS `usesr_picture`, `status` AS `user_status`, `name` AS `user_name`'
     + ' FROM '+user_table
     + ' WHERE `id`=:user_id';
@@ -431,18 +431,26 @@ var postUserInfo = exports.postUserInfo = function(new_user, callback){
       callback(error_get, null);
     }else{
       old_user = old_user[0];
+      if(new_user.user_password){
+        var old_shasum = crypto.createHash('sha1');
+        old_shasum.update(old_user.salt+new_user.user_old_password);
+        var old_hash = old_shasum.digest('hex');
+        
+        if(old_hash !== old_user.user_password){
+          callback('PASS_ERR', null);
+        }else{
+          var salt = crypto.pseudoRandomBytes(256);
+          var shasum = crypto.createHash('sha1').update(salt);
+          var hsalt = shasum.digest('hex');
+          var shasum = crypto.createHash('sha1').update(hsalt+new_user.user_password);
+          var hpass = shasum.digest('hex');
+          delete new_user.user_password;
+          params_update.password = hpass;
+          params_update.salt = hsalt;
+        }
+      }
       if(new_user.user_name != old_user.user_name){
         params_update.name = new_user.user_name;
-      }
-      if(new_user.user_password){
-        var salt = crypto.pseudoRandomBytes(256);
-        var shasum = crypto.createHash('sha1').update(salt);
-        var hsalt = shasum.digest('hex');
-        var shasum = crypto.createHash('sha1').update(hsalt+new_user.user_password);
-        var hpass = shasum.digest('hex');
-        delete new_user.user_password;
-        params_update.password = hpass;
-        params_update.salt = hsalt;
       }
       if(new_user.user_email != old_user.user_email){
         params_update.email = new_user.user_email;
