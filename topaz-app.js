@@ -142,17 +142,21 @@ var get_message = exports.get_message = function(req, res){
         if(error){
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
-          if(prep.with_comments == 'WITH_COMMENTS'){
-            mysql_helper.getComments(prep.id, function(err, comments){
-              if(err){
-                res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
-              }else{
-                message.comments = comments;
-                res.json(formatResponse(prep.version, 200, 'OK', message));
-              }
-            });
+          if(message !== null){
+            if(prep.with_comments == 'WITH_COMMENTS'){
+              mysql_helper.getComments(prep.id, function(err, comments){
+                if(err){
+                  res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
+                }else{
+                  message.comments = comments;
+                  res.json(formatResponse(prep.version, 200, 'OK', message));
+                }
+              });
+            }else{
+              res.json(formatResponse(prep.version, 200, 'OK', message));
+            }
           }else{
-            res.json(formatResponse(prep.version, 200, 'OK', message));
+            res.json(formatError(404, 'MSG_ERR', 'Message not found'));
           }
         }
       });

@@ -118,12 +118,12 @@ describe('topaz-app.js', function(){
       it('should still work!', function(done){
         var input = {'version': 'v1.3', 'lat1': 12, 'lat2': 34, 'long1': 56, 'long2': 78,
           'by_tag': 'BY_TAG'};
-        var req = {'params': input, 'body': {tag: '#tag'}};
+        var req = {'params': input, 'query': {tag: 'tag'}};
 
         var actual = topaz.prepare_get_previews(req);
         input.error = null;
         delete input.by_tag;
-        input.tag = req.body.tag;
+        input.tag = '#'+req.query.tag;
         actual.should.eql(input);
 
         var bad_input = {'version': 'v1.1', 'lat1': 12, 'lat2': 34};
@@ -189,7 +189,7 @@ describe('topaz-app.js', function(){
         var req = {'params': {'lat1': 11, 'lat2': 13, 'long1': 33, 'long2': 35, 'by_tag': 'BY_TAG',
           'version': 'v1.3'},
           'session': {user_id: 1},
-          'body': {tag: '#tagtag'}};
+          'query': {tag: 'tagtag'}};
         var res = {'json': function(object){
           message.tags = ['#tagtag'];
           object.success.should.not.equal(undefined);

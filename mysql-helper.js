@@ -175,11 +175,15 @@ var getMessage = exports.getMessage = function(id, user_id, callback){
       callback(error, null);
     }else{
       var results = _.flatten(data.message);
-      var final_result = _.extend(results[0], results[1]);
-      final_result.likeStatus = final_result.likeStatus || 'NONE';
-      final_result = (error===null) ? final_result || null : null;
-      final_result.tags = data.tags;
-      callback(null, final_result);
+      if(results.length > 0){
+        var final_result = _.extend(results[0], results[1]);
+        final_result.likeStatus = final_result.likeStatus || 'NONE';
+        final_result = (error===null) ? final_result || null : null;
+        final_result.tags = data.tags;
+        callback(null, final_result);
+      }else{
+        callback(null, null);
+      }
     }
   });
 };
