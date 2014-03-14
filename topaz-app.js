@@ -83,9 +83,10 @@ var prepare_get_previews = exports.prepare_get_previews = function(req){
   long1 = parseFloat(long1);
   lat2  = parseFloat(lat2);
   long2 = parseFloat(long2);
+  tag = tag?'#'+tag:undefined;
 
   return {'error': error, 'version': version, 'lat1': lat1, 'long1': long1, 'lat2': lat2,
-    'long2': long2, 'tag': '#'+tag};
+    'long2': long2, 'tag': tag};
 };
 
 var get_previews = exports.get_previews = function(req, res){
