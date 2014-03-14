@@ -303,7 +303,9 @@ var post_comment = exports.post_comment = function(req, res){
       res.json(prep.error);
     }else{
       mysql_helper.postComment(prep.comment, function(error, result){
-        if(error){
+        if(error === 'MSG_ERR'){
+          res.json(formatError(404, 'MSG_ERR', 'Message not found'));
+        }else if(error){
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
           prep.comment['id'] = result.insertId;
@@ -550,7 +552,9 @@ var post_user_info = exports.post_user_info = function(req, res){
       res.json(prep.error);
     }else{
       mysql_helper.postUserInfo(prep.user, function(error, new_user){
-        if(error){
+        if(error === 'PASS_ERR'){
+          res.json(formatError(401, 'PASS_ERR', 'The password does not match'));
+        }else if(error){
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{
           res.json(formatResponse(prep.version, 200, 'OK', new_user));
