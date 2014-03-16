@@ -495,7 +495,6 @@ var get_user_info = exports.get_user_info = function(req, res){
 
 var prepare_post_user_info = exports.prepare_post_user_info = function(req){
   var user = req.body;
-  //user.id = req.session.user_id;
 
   var rules = [
     {
@@ -553,7 +552,11 @@ var post_user_info = exports.post_user_info = function(req, res){
     }else{
       mysql_helper.postUserInfo(prep.user, function(error, new_user){
         if(error === 'PASS_ERR'){
-          res.json(formatError(401, 'PASS_ERR', 'The password does not match'));
+          res.json(formatError(403, 'PASS_ERR', 'The password does not match'));
+        }else if(error === 'USERNAME_ERR'){
+          res.json(formatError(409, 'USERNAME_ERR', 'User name already in use'));
+        }else if(error === 'EMAIL_ERR'){
+          res.json(formatError(409, 'EMAIL_ERR', 'User email already in use'));
         }else if(error){
           res.json(formatError(500, 'SQL_ERR', 'Internal Server Error'));
         }else{

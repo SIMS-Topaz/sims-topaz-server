@@ -451,19 +451,38 @@ describe('mysql-helper.js', function(){
         ready();
       });
     });
-    it('should post new info', function(done){
-      /*old_user.picture_url = 'DK/avatar.jpg';
-      old_user.password = old_user.pass;
-      old_user.status = 'Hungry';
-      delete old_user.pass;
-      delete old_user.salt;*/
-      var new_user = {user_id: old_user.id, user_name: old_user.name, user_email: 'kong@chunky.fr',
-        user_status: 'Asleep', user_picture: 'DK/new_avatar.jpg'};
-      mysql_helper.postUserInfo(new_user, function(error, user){
-        (error === null).should.be.true;
-        user.should.eql(new_user);
-        done();
-      }); 
+    describe('normal changes', function(){
+      it('should post new info', function(done){
+        var new_user = {user_id: old_user.id, user_name: old_user.name, user_email: 'kong@chunky.fr',
+          user_status: 'Asleep', user_picture: 'DK/new_avatar.jpg'};
+        mysql_helper.postUserInfo(new_user, function(error, user){
+          (error === null).should.be.true;
+          user.should.eql(new_user);
+          done();
+        }); 
+      });
+    });
+    describe('tries to update user name with an existing name', function(){      
+      it('should return a "USERNAME_ERR"', function(done){
+        var new_user = {user_id: old_user.id, user_name: 'Beer Lady', user_email: 'kong@chunky.fr',
+          user_status: 'Asleep', user_picture: 'DK/new_avatar.jpg'};
+        mysql_helper.postUserInfo(new_user, function(error, user){
+          (error === 'USERNAME_ERR').should.be.true;
+          (user === null).should.be.true;
+          done();
+        }); 
+      });
+    });
+    describe('tries to update user email with an existing email', function(){      
+      it('should return a "EMAIL_ERR"', function(done){
+        var new_user = {user_id: old_user.id, user_name: old_user.name, user_email: 'beer@lady.com',
+          user_status: 'Asleep', user_picture: 'DK/new_avatar.jpg'};
+        mysql_helper.postUserInfo(new_user, function(error, user){
+          (error === 'EMAIL_ERR').should.be.true;
+          (user === null).should.be.true;
+          done();
+        }); 
+      });
     });
   });
 

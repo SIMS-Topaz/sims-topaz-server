@@ -449,12 +449,6 @@ var postUserInfo = exports.postUserInfo = function(new_user, callback){
           params_update.salt = hsalt;
         }
       }
-      if(new_user.user_name != old_user.user_name){
-        params_update.name = new_user.user_name;
-      }
-      if(new_user.user_email != old_user.user_email){
-        params_update.email = new_user.user_email;
-      }
       if(new_user.user_status != old_user.user_status){
         params_update.status = new_user.user_status;
       }
@@ -462,18 +456,53 @@ var postUserInfo = exports.postUserInfo = function(new_user, callback){
         params_update.picture_url = new_user.user_picture;
       }
       
-      var query_update = 'UPDATE '+user_table+' SET ';
-      _.each(params_update, function(value, key){
-        query_update += '`'+key+'`=:'+key+', ';
-      });
-      params_update.user_id = new_user.user_id;
-      query_update = query_update.substring(0, query_update.length-2);
-      query_update += ' WHERE `id`=:user_id';
+      var diff_name  = (new_user.user_name  != old_user.user_name);
+      var diff_email = (new_user.user_email != old_user.user_email);
       
-      doQuery(query_update, params_update, function(error){
-        callback(error, new_user);
-      });
+      if(diff_name || diff_email){
+        var exist_query = 'SELECT `nb_name`, `nb_email` FROM (SELECT COUNT(`id`) AS `nb_name`'
+          + ' FROM '+user_table+' WHERE `name`=:name) a'
+          + ' CROSS JOIN (SELECT COUNT(`id`) AS `nb_email` FROM '+user_table+' WHERE `email`=:email) b;';
+        var exist_params = {'name': new_user.user_name, 'email': new_user.user_email};
+        
+        doQuery(exist_query, exist_params, function(error_exist, result_exist){
+          if(error_exist){
+            callback(error_exist, null);
+          }else{
+            if(diff_name){
+              if(result_exist[0].nb_name > 0){
+                return callback('USERNAME_ERR', null);
+              }else{
+                params_update.name = new_user.user_name;
+              }
+            }  
+            if(diff_email){
+              if(result_exist[0].nb_email > 0){
+                return callback('EMAIL_ERR', null);
+              }else{
+                params_update.email = new_user.user_email;
+              }
+            }
+            completePostUserInfo(params_update, new_user);   
+          }
+        });
+      }else{
+        completePostUserInfo(params_update, new_user);   
+      }
     }
   });
 
+  var completePostUserInfo = function(params_update, new_user){
+    var query_update = 'UPDATE '+user_table+' SET ';
+    _.each(params_update, function(value, key){
+      query_update += '`'+key+'`=:'+key+', ';
+    });
+    params_update.user_id = new_user.user_id;
+    query_update = query_update.substring(0, query_update.length-2);
+    query_update += ' WHERE `id`=:user_id';
+
+    doQuery(query_update, params_update, function(error){
+      callback(error, new_user);
+    });
+  };
 };
