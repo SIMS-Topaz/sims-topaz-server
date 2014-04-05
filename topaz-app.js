@@ -4,7 +4,6 @@ var path = require('path');
 var _ = require ('underscore');
 
 var mysql_helper = require('./mysql-helper.js');
-var conf  = require('./conf.js');
 
 var get_index = exports.get_index = function(req, res){
   res.send('Topaz Server Working!');
@@ -63,7 +62,6 @@ var prepare_get_previews = exports.prepare_get_previews = function(req){
     }
   ];
   if(by_tag !== undefined){
-    var body = req.body || {};
     tag = req.query.tag;
     rules.push({
       rule: by_tag == 'BY_TAG',

@@ -1,10 +1,7 @@
 var http    = require('http');
 var https   = require('https');
-var fs   = require('fs');
-
-var _       = require('underscore');
+var fs      = require('fs');
 var express = require('express');
-
 var conf    = require('./conf.js');
 var topaz   = require('./topaz-app.js');
 var mysql_helper = require('./mysql-helper.js');
@@ -18,10 +15,7 @@ app
 .use(express.bodyParser({ keepExtensions: true, uploadDir: './uploads/' }))
 .use(express.cookieParser())
 .use(express.session({
-  store: new RedisStore({
-    host: 'localhost',
-    port: 6379,
-  }),
+  store: new RedisStore(conf.redis),
   secret: '12345'
 }))
 .use('/img', express.static(__dirname + '/uploads'))

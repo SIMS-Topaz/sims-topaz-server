@@ -12,7 +12,7 @@ var insert_dummy_message = function(message, callback){
   message.date = new Date().getTime();
   message.user_id = message.user_id || 99;
   mysql_helper.doQuery(query, message, function(error, results){
-    if(error !== null){throw Error('Unable to create a dummy message'+error);};
+    if(error !== null){throw Error('Unable to create a dummy message'+error);}
     var inserted_message = message;
     inserted_message.id = results.insertId;
     callback(inserted_message);
@@ -24,7 +24,7 @@ var insert_dummy_comment = function(params, callback){
     + ' VALUES (:text, :date, :message_id, :user_id)';
   params.date = new Date().getTime();
   mysql_helper.doQuery(query, params, function(error, results){
-    if(error !== null){throw Error('Unable to create a dummy comment'+error);};
+    if(error !== null){throw Error('Unable to create a dummy comment'+error);}
     var inserted_comment = params;
     inserted_comment.id = results.insertId;
     callback(inserted_comment);
@@ -36,7 +36,7 @@ var insert_dummy_user = function(params, callback){
     + ' VALUES (:name, :email, :salt, :pass)';
   params.salt = 'b176e76607ef6286a8e54a7e2aa7ef39446efb55';
   mysql_helper.doQuery(query, params, function(error, results){
-    if(error !== null){throw Error('Unable to create a dummy user'+error);};
+    if(error !== null){throw Error('Unable to create a dummy user'+error);}
     var inserted_user = params;
     inserted_user.id = results.insertId;
     callback(inserted_user);
@@ -85,8 +85,8 @@ describe('topaz-app.js', function(){
       actual.should.eql(topaz.handleError(rules));
 
       rule1.rule = true;
-      var actual = topaz.formatError(rule2.code, rule2.msg, rule2.details);
-      actual.should.eql(topaz.handleError(rules));
+      var actual2 = topaz.formatError(rule2.code, rule2.msg, rule2.details);
+      actual2.should.eql(topaz.handleError(rules));
       done();
     });
   });
@@ -102,14 +102,14 @@ describe('topaz-app.js', function(){
         delete actual.tag;
         actual.should.eql(input);
 
-        var input = {'version': 'v1.1', 'lat1': 12, 'lat2': 34};
-        var req = {'params': input};
+        var bad_input = {'version': 'v1.1', 'lat1': 12, 'lat2': 34};
+        var bad_req = {'params': bad_input};
 
-        var actual = topaz.prepare_get_previews(req);
-        actual.error.should.not.equal(null);
-        actual.error.should.not.equal(undefined);
-        actual.error.error.code.should.equal(400);
-        actual.error.error.msg.should.equal('PARAM_ERR');
+        var bad_actual = topaz.prepare_get_previews(bad_req);
+        bad_actual.error.should.not.equal(null);
+        bad_actual.error.should.not.equal(undefined);
+        bad_actual.error.error.code.should.equal(400);
+        bad_actual.error.error.msg.should.equal('PARAM_ERR');
         done();
       });
     });

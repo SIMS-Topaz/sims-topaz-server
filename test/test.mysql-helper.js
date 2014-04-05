@@ -15,7 +15,7 @@ var insert_dummy_message = function(message, callback){
   message.date = new Date().getTime();
   message.user_id = message.user_id || 99;
   mysql_helper.doQuery(query, message, function(error, results){
-    if(error !== null){throw Error('Unable to create a dummy message'+error);};
+    if(error !== null){throw Error('Unable to create a dummy message'+error);}
     var inserted_message = message;
     inserted_message.id = results.insertId;
     callback(inserted_message);
@@ -27,7 +27,7 @@ var insert_dummy_comment = function(params, callback){
     + ' VALUES (:text, :date, :message_id, :user_id)';
   params.date = new Date().getTime();
   mysql_helper.doQuery(query, params, function(error, results){
-    if(error !== null){throw Error('Unable to create a dummy comment'+error);};
+    if(error !== null){throw Error('Unable to create a dummy comment'+error);}
     var inserted_comment = params;
     inserted_comment.id = results.insertId;
     callback(inserted_comment);
@@ -39,7 +39,7 @@ var insert_dummy_user = function(params, callback){
     + ' VALUES (:name, :email, :salt, :pass)';
   params.salt = 'b176e76607ef6286a8e54a7e2aa7ef39446efb55';
   mysql_helper.doQuery(query, params, function(error, results){
-    if(error !== null){throw Error('Unable to create a dummy user'+error);};
+    if(error !== null){throw Error('Unable to create a dummy user'+error);}
     var inserted_user = params;
     inserted_user.id = results.insertId;
     callback(inserted_user);
@@ -217,8 +217,7 @@ describe('mysql-helper.js', function(){
           actual = actual[0];
           user.id = result.insertId;
           var shasum = crypto.createHash('sha1').update(actual.salt+pass);
-          var hpass = shasum.digest('hex');
-          user.password = hpass;
+          user.password = shasum.digest('hex');
           user.salt = actual.salt;
           user.picture_url = null;
           user.status = null;

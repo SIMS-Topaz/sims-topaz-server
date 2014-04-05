@@ -320,11 +320,12 @@ var doPostLikeStatus = exports.doPostLikeStatus = function(likeStatus, callback)
       var queries = '';
       
       if(previous_vote != current_vote){
+        var vote;
         if(previous_vote == 'NONE'){
-          var vote = (current_vote == 'DISLIKED') ? 'dislikes' : 'likes';
+          vote = (current_vote == 'DISLIKED') ? 'dislikes' : 'likes';
           queries += query_firstVote(vote);
         }else if(current_vote == 'NONE'){
-          var vote = (previous_vote == 'DISLIKED') ? 'dislikes' : 'likes';
+          vote = (previous_vote == 'DISLIKED') ? 'dislikes' : 'likes';
           queries += query_cancelVote(vote);
         }else{
           if(previous_vote == 'DISLIKED') queries += query_updateVote('dislikes', 'likes');
@@ -381,8 +382,8 @@ var postSignup = exports.postSignup = function(user_name, user_password, user_em
         var salt = crypto.pseudoRandomBytes(256);
         var shasum = crypto.createHash('sha1').update(salt);
         var hsalt = shasum.digest('hex');
-        var shasum = crypto.createHash('sha1').update(hsalt+user_password);
-        var hpass = shasum.digest('hex');
+        var shasum2 = crypto.createHash('sha1').update(hsalt+user_password);
+        var hpass = shasum2.digest('hex');
         var params = {'name': user_name, 'pass': hpass, 'salt': hsalt, 'email': user_email};
         var query = 'INSERT INTO '+user_table+' (`name`, `email`, `salt`, `password`)'
           + ' VALUES (:name, :email, :salt, :pass)';

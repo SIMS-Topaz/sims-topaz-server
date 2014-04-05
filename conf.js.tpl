@@ -20,8 +20,11 @@ exports.mysql =
   multipleStatements: true
 };
 
-// date format used in MySQL
-exports.MYSQL_DATE = 'YYYY-MM-DD HH:mm:ss';
+exports.redis =
+{
+  url  : 'localhost',
+  port : 6379
+};
 
 // maximum size of a message preview
 exports.PREVIEW_SIZE = 50; // valeur a discuter

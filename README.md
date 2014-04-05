@@ -5,16 +5,13 @@ La partie Server du projet SIMS.
 
 ###Bonnes pratiques
 
-####Commit
-
-Quand un membre de l'équipe fait un commit, il serait intéressant que le nom du commit commence les initiales du membre faisant le commit entre crochets.
-Exemple: pour John Doe: [JDO]
-La description du commit doit décrire très clairement ce qui a été commité.
-
-
 ####Branches
 
-Eviter de coder directement sur la branche master. Créer une nouvelle branche (avec un nom pertinant) pour développer une nouvelle fonctionnalité, ou corriger une anomalie. Effectuer des tests avant de merger dans la branche master.
+Eviter de coder directement sur la branche master.
+Créer une nouvelle branche pour développer une nouvelle fonctionnalité, ou corriger une anomalie.
+Le nom de la branche doit commencer par le nom de la personne qui crée cette branche.
+Ex: pour John Doe, jdo/branch_name
+Effectuer des tests avant de faire une pull request.
 
 
 ###Technologies utilisées
@@ -53,4 +50,5 @@ which node
 
 ####Base de données
 
-SQL vs NoSQL, à débattre...
+MySQL. (Basculer sur du MongoDB?)
+redis pour les sessions utilisateurs.
