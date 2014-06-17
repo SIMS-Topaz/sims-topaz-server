@@ -1,21 +1,44 @@
 {
-  "name": "topaz-server",
-  "version": "1.3.1",
-  "author": "Hugo MULLER",
-  "description": "Serveur pour l'application Topaz (SIMS)",
+  "name": "sims-topaz-server",
+  "version": "1.4.0",
+  "author": "SIMS-Topaz (https://github.com/SIMS-Topaz)",
+  "contributors": [
+    "alexjab (https://github.com/alexjab)",
+    "HugoMuller (https://github.com/HugoMuller)"
+  ],
+  "license": "MIT",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SIMS-Topaz/sims-topaz-server"
+  },
+  "description": "Backend process of Topaz (SIMS)",
   "dependencies": {
-    "express": "~3.4.8",
+    "express": "~4.4.3",
     "mysql": "~2.0.1",
-    "underscore": "~1.5.2",
-    "connect-redis": "~1.4.7",
-    "should": "~3.1.3",
-    "async": "~0.2.10"
+    "mongoose": "~3.8.12",
+    "lodash": "~2.4.1",
+    "connect-redis": "~2.0.0",
+    "async": "~0.9.0",
+    "passport": "~0.2.0",
+    "passport-local": "~1.0.0",
+    "passport-facebook": "~1.0.3",
+    "passport-twitter": "~0.1.5",
+
+    "body-parser": "~1.3.1",
+    "cookie-parser": "~1.1.0",
+    "express-session": "~1.3.1",
+    "multer": "~0.1.0"
+  },
+  "devDependencies": {
+    "should": "~3.1.3"    
   },
   "engines": {
-    "node": "~0.10.25"
+    "node": "0.10.x",
+    "npm": "1.3.x"
   },
-  "main": "topaz-server.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node topaz-server.js"
+    "start": "node server.js"
   }
 }

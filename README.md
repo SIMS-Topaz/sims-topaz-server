@@ -1,54 +1,52 @@
 sims-topaz-server
 =================
 
-La partie Server du projet SIMS.
+Backend process of the project SIMS Topaz.
 
-###Bonnes pratiques
+-------------------------------------------
 
-####Branches
+Prerequisites
+-------------
 
-Eviter de coder directement sur la branche master.
-Créer une nouvelle branche pour développer une nouvelle fonctionnalité, ou corriger une anomalie.
-Le nom de la branche doit commencer par le nom de la personne qui crée cette branche.
-Ex: pour John Doe, jdo/branch_name
-Effectuer des tests avant de faire une pull request.
+ - [Redis](http://redis.io/download) - Make sure redis-server is running on port 6379.
+ - [MySQL](http://dev.mysql.com/downloads/mysql) - Make sure mysql is running on port 3306.
+ - [MongoDB](http://docs.mongodb.org/manual/installation/) - (In the next release) Make sure mongod is running on port 27017.
 
 
-###Technologies utilisées
+Technologies
+------------
 
-####Node.js
+###Node.js
 
-Aller sur la page du projet et le télécharger (gros bouton vert INSTALL): http://nodejs.org
-Le navigateur téléchargera la version adaptée à l'OS (Linux, Windows, Mac OS, 32 ou 64 bits...)
+Event-driven server. ====> [Node.js](http://nodejs.org/)
 
-#####Installation
+####Installation
 
-######Windows
+#####Windows
 
-Exécuter le fichier node-vX.X.X.msi.
-Tester avec la commande node dans un terminal.
+Download and execute the file node-vX.X.X.msi.
 
-######Mac OS / Linux
+#####Mac OS / Linux
 
-Le plus simple est de passer par nvm: nvm permet d'avoir plusieurs versions de node.js installées sur votre machine, tout est installé en local donc ça ne pollue pas votre OS (même avec -g):
-```
-git clone https://github.com/creationix/nvm
-cd nvm
-source nvm.sh
-nvm install 0.10.24
-nvm use 0.10.24
-nvm alias default 0.10.24
-```
+You can use [nvm](https://github.com/creationix/nvm), the Node Version Manager. It allows you to install several versions of Node.js.  
+Here, an example with node v0.10.24:
 
-Quand vous voulez utiliser node.js:
-```
-cd nvm
-source nvm.sh
-which node
---> devrait afficher /home/user/nvm/v0.10.22/bin/node et non /usr/local/bin/node
-```
+    $ git clone https://github.com/creationix/nvm
+    $ cd nvm
+    $ source nvm.sh
+    $ nvm install 0.10.24
+    $ nvm use 0.10.24
+    $ nvm alias default 0.10.24
 
-####Base de données
+To use Node.js:
 
-MySQL. (Basculer sur du MongoDB?)
-redis pour les sessions utilisateurs.
+    $ cd nvm
+    $ source nvm.sh
+    $ which node
+
+This should show **/home/user/nvm/v0.10.24/bin/node** instead of **/usr/local/bin/node**.
+
+###Databases
+
+Data-store: MySQL for now. We plan to use MongoDB instead.  
+Session-store: Redis.
