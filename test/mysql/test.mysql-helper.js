@@ -2,8 +2,8 @@ var crypto = require('crypto');
 
 var should = require("should");
 
-var topaz = require('../../topaz-app.js');
-var mysql_helper = require('../../mysql-helper.js');
+var topaz = require('../../app/mysql/topaz-app.js');
+var mysql_helper = require('../../app/mysql/mysql-helper.js');
 var conf = require('../../config/conf.js');
 
 mysql_helper.openConnection(conf.mysql);

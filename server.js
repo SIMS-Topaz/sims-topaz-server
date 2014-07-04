@@ -6,6 +6,7 @@ var passport = require('passport');
 var config = require('./config/conf.js');
 var mongoose = require('mongoose');
 var utils = require('./app/utils/utils');
+var console = require('logbrok')(__filename);
 
 // Bootstrap db connection
 mongoose.connect(config.mongo.uri, config.mongo.options);
@@ -28,5 +29,5 @@ try{
   https.createServer(credentials, app).listen(config.node.https_port);
   console.log('Topaz Server (HTTPS) running at',config.node.url+':'+config.node.https_port);
 }catch(err){
-  console.log('Failed to start Topaz Server (HTTPS):', err);
+  console.log('Failed to start Topaz Server (HTTPS):', err.message);
 }

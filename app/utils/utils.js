@@ -48,7 +48,7 @@ exports.validatePresenceOf = function(value){
   return value && value.length;
 };
 
-exports.formatResponse = function(success_code, success_msg, data, version){
+exports.formatResponse = function(version, success_code, success_msg, data){
   if(version === 'v1') return data;
   return {
     data: data,
@@ -59,7 +59,7 @@ exports.formatResponse = function(success_code, success_msg, data, version){
   };
 };
 
-exports.formatError = function formatError(error_code, error_msg, error_details){
+var formatError = exports.formatError = function(error_code, error_msg, error_details){
   return {
     error: {
       code: error_code,
@@ -70,14 +70,14 @@ exports.formatError = function formatError(error_code, error_msg, error_details)
 };
 
 exports.handleError = function(rules){
-  var result = null;
+  var error = null;
 
   _.every(rules, function(rule){
     if(!rule.rule){
-      result = formatError(rule.code, rule.msg, rule.details);
+      error = formatError(rule.code, rule.msg, rule.details);
       return false;
     }
     return true;
   });
-  return result;
+  return error;
 };

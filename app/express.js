@@ -2,6 +2,7 @@
 
 var config = require('../config/conf');
 var session = require('express-session');
+var bodyParser = require('body-parser');
 var RedisStore = require('connect-redis')(session);
 var utils = require('./utils/utils');
 var uploadDir = config.root+'/uploads/';
@@ -13,12 +14,15 @@ module.exports = function(app, passport){
   app.enable('jsonp callback');
   // The cookieParser should be above session
   app.use(require('cookie-parser')());
-  app.use(require('body-parser')());
+  app.use(bodyParser.urlencoded({ extended: true }));
+  app.use(bodyParser.json());
   app.use(require('multer')({ dest: uploadDir }));
   // Express/Mongo session storage
   app.use(session({
     secret: config.sessionSecret,
-    store: new RedisStore(config.redis)
+    store: new RedisStore(config.redis),
+    resave: true,
+    saveUninitialized: true
   }));
   /********************************************************************************/
 

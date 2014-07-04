@@ -8,8 +8,9 @@ Backend process of the project SIMS Topaz.
 Prerequisites
 -------------
 
+ - [Node.js](http://nodejs.org/download/)
  - [Redis](http://redis.io/download) - Make sure redis-server is running on port 6379.
- - [MySQL](http://dev.mysql.com/downloads/mysql) - Make sure mysql is running on port 3306.
+ - [MySQL](http://dev.mysql.com/downloads/mysql) - Make sure mysql is running on port 3306. (Until next release)
  - [MongoDB](http://docs.mongodb.org/manual/installation/) - (In the next release) Make sure mongod is running on port 27017.
 
 
@@ -22,9 +23,12 @@ Event-driven server. ====> [Node.js](http://nodejs.org/)
 
 ####Installation
 
+Go to Node.js [download page](http://nodejs.org/download/)
+**Note**: Node.js version must be 0.10.x!
+
 #####Windows
 
-Download and execute the file node-vX.X.X.msi.
+Download and execute the .msi or .exe file. Follow the instructions.
 
 #####Mac OS / Linux
 
